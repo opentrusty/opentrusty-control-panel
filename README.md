@@ -1,73 +1,86 @@
-# React + TypeScript + Vite
+# OpenTrusty Control Panel
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Administrative UI for the OpenTrusty Identity Provider.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The OpenTrusty Control Panel is the human-facing administrative interface for managing:
 
-## React Compiler
+- **Platform Administration**: Tenant lifecycle, platform admins, system configuration
+- **Tenant Administration**: Users, OAuth2 clients, audit logs
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+> ⚠️ **This is NOT an end-user portal.** Only platform admins and tenant admins access this UI.
 
-## Expanding the ESLint configuration
+## Technology Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Framework**: React 18+ with TypeScript
+- **Styling**: Tailwind CSS
+- **Build Tool**: Vite
+- **HTTP Client**: OpenAPI-generated client
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Architecture
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+┌─────────────────────────────┐
+│    Control Panel UI         │
+│    (This Repository)        │
+└─────────────┬───────────────┘
+              │ HTTP/REST
+              ▼
+┌─────────────────────────────┐
+│    OpenTrusty Core          │
+│    (opentrusty repo)        │
+│    - OAuth2/OIDC Engine     │
+│    - Admin APIs             │
+│    - Session Management     │
+└─────────────────────────────┘
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**The UI is a pure API consumer.** It does not contain:
+- Authentication logic (sessions handled by backend cookies)
+- Security enforcement (all authorization is server-side)
+- Backend code or database access
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Development
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- Running OpenTrusty backend
+
+### Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
+
+### Build
+
+```bash
+# Production build
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## AI Governance
+
+Before modifying code, read:
+
+1. `AI_CONTRACT.md` — Security boundaries and forbidden actions
+2. `docs/_ai/README.md` — Mandatory reading order
+3. `docs/_ai/invariants.md` — UI-specific rules
+
+## Related Repositories
+
+- **opentrusty** — Core Identity Provider (OAuth2/OIDC engine)
+
+## License
+
+MIT License - see [LICENSE](LICENSE)

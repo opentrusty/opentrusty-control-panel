@@ -1,106 +1,300 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { oauthClientApi } from "../../app/api/oauthClientApi";
+import { client } from "../../api/client";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Plus, Trash2, Copy } from "lucide-react";
+import type { paths } from "../../api/generated/schema";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useParams } from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox";
+
+type Client = paths["/tenants/{tenantID}/oauth2/clients"]["get"]["responses"][200]["content"]["application/json"]["clients"][number];
+
+const createClientSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters"),
+  redirect_uris: z.string().min(1, "At least one redirect URI is required"),
+  is_public: z.boolean().default(false),
+});
 
 export default function ClientList() {
   const { tenantId } = useParams<{ tenantId: string }>();
-  const [clients, setClients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  // State to show generated secret
+  const [newClientSecret, setNewClientSecret] = useState<{ id: string, secret: string } | null>(null);
+
+  const form = useForm<z.infer<typeof createClientSchema>>({
+    resolver: zodResolver(createClientSchema) as any,
+    defaultValues: {
+      name: "",
+      redirect_uris: "",
+      is_public: false,
+    },
+  });
 
   const fetchClients = async () => {
     if (!tenantId) return;
-    try {
-      setLoading(true);
-      const response = await oauthClientApi.list(tenantId);
-      setClients(response.clients);
-    } catch (error: any) {
-      toast.error("Failed to load clients: " + error.message);
-    } finally {
-      setLoading(false);
+    setIsLoading(true);
+    // Using the manually patched GET method
+    const { data, error } = await client.GET("/tenants/{tenantID}/oauth2/clients", {
+      params: { path: { tenantID: tenantId } },
+    });
+    if (error) {
+      toast.error("Failed to load clients");
+    } else if (data && data.clients) {
+      setClients(data.clients);
     }
+    setIsLoading(false);
   };
 
   useEffect(() => {
     fetchClients();
   }, [tenantId]);
 
-  const handleDelete = async (clientId: string) => {
-    if (!tenantId || !confirm("Are you sure you want to delete this client?")) return;
+  const onSubmit = async (values: z.infer<typeof createClientSchema>) => {
+    if (!tenantId) return;
 
-    try {
-      await oauthClientApi.delete(tenantId, clientId);
-      toast.success("Client deleted successfully");
-      fetchClients();
-    } catch (error: any) {
-      toast.error("Failed to delete client: " + error.message);
+    // Split redirect URIs by comma or newline
+    const uris = values.redirect_uris.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+
+    const { data, error } = await client.POST("/tenants/{tenantID}/oauth2/clients", {
+      params: { path: { tenantID: tenantId } },
+      body: {
+        client_name: values.name, // Mapped to client_name
+        redirect_uris: uris,
+        type: values.is_public ? "public" : "confidential",
+      },
+    });
+
+    if (error) {
+      toast.error("Failed to create client");
+      return;
     }
+
+    toast.success(`Client ${data.client_id} created successfully`);
+    // If confidential, show secret
+    if (data.client_secret) {
+      setNewClientSecret({ id: data.client_id!, secret: data.client_secret });
+    } else {
+      setIsCreateOpen(false);
+    }
+    form.reset();
+    fetchClients();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const handleDelete = async (clientId: string) => {
+    if (!tenantId) return;
+    if (!confirm("Are you sure you want to delete this client?")) return;
+
+    const { error } = await client.DELETE("/tenants/{tenantID}/oauth2/clients/{clientID}", {
+      params: { path: { tenantID: tenantId, clientID: clientId } },
+    });
+
+    if (error) {
+      toast.error("Failed to delete client");
+      return;
+    }
+    toast.success("Client deleted");
+    fetchClients();
+  };
+
+  if (!tenantId) return <div>Invalid Tenant ID</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">OAuth Clients</h1>
-          <p className="text-gray-500 mt-1">Manage applications that can authenticate with your tenant.</p>
+          <h2 className="text-2xl font-bold tracking-tight">OAuth2 Clients</h2>
+          <p className="text-muted-foreground">
+            Manage applications and API credentials.
+          </p>
         </div>
-        <Link
-          to={`/tenant/${tenantId}/clients/new`}
-          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-        >
-          Register Client
-        </Link>
-      </div>
-
-      <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
-        <ul className="divide-y divide-gray-200">
-          {clients.length === 0 ? (
-            <li className="px-6 py-12 text-center">
-              <p className="text-gray-500">No OAuth clients found. Register your first application to get started.</p>
-            </li>
-          ) : (
-            clients.map((client) => (
-              <li key={client.id} className="hover:bg-gray-50">
-                <div className="px-6 py-4 flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-blue-600 truncate">{client.client_name}</p>
-                      <div className="ml-2 flex-shrink-0 flex">
-                        <p className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${client.token_endpoint_auth_method === 'none'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-blue-100 text-blue-800'
-                          }`}>
-                          {client.token_endpoint_auth_method === 'none' ? 'Public' : 'Confidential'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-2 flex">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span className="truncate">Client ID: <code className="bg-gray-100 px-1 rounded">{client.client_id}</code></span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="ml-6 flex-shrink-0 flex space-x-3">
-                    <button
-                      onClick={() => handleDelete(client.id)}
-                      className="text-red-600 hover:text-red-900 text-sm font-medium"
-                    >
-                      Delete
-                    </button>
+        <Dialog open={isCreateOpen} onOpenChange={(open: boolean) => {
+          if (!open) setNewClientSecret(null); // Clear secret when closing
+          setIsCreateOpen(open);
+        }}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Register Client
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            {newClientSecret ? (
+              <div className="space-y-4">
+                <DialogHeader>
+                  <DialogTitle>Client Created</DialogTitle>
+                  <DialogDescription>
+                    Please copy your client secret now. It will not be shown again.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Label>Client ID</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input value={newClientSecret.id} readOnly />
+                    <Button size="icon" variant="ghost" onClick={() => {
+                      navigator.clipboard.writeText(newClientSecret.id);
+                      toast.success("Copied ID");
+                    }}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              </li>
-            ))
-          )}
-        </ul>
+                <div className="space-y-2">
+                  <Label>Client Secret</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input value={newClientSecret.secret} readOnly />
+                    <Button size="icon" variant="ghost" onClick={() => {
+                      navigator.clipboard.writeText(newClientSecret.secret);
+                      toast.success("Copied Secret");
+                    }}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={() => setIsCreateOpen(false)}>Done</Button>
+                </DialogFooter>
+              </div>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Register New Client</DialogTitle>
+                  <DialogDescription>
+                    Create a new OAuth2 client application.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4">
+                    <FormField
+                      control={form.control as any}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="My App" {...field} value={field.value as string} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control as any}
+                      name="redirect_uris"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Redirect URIs (comma separated)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="http://localhost:3000/callback" {...field} value={field.value as string} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control as any}
+                      name="is_public"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value as boolean}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Public Client
+                            </FormLabel>
+                            <p className="text-sm text-muted-foreground">
+                              Check if this is a SPA or Mobile app (No client secret).
+                            </p>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter>
+                      <Button type="submit" disabled={form.formState.isSubmitting}>
+                        {form.formState.isSubmitting ? "Registering..." : "Register Client"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Client ID</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center">
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : clients.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center">
+                  No clients found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              clients.map((c) => (
+                <TableRow key={c.client_id}>
+                  <TableCell className="font-medium">{c.name}</TableCell>
+                  <TableCell className="font-mono text-xs">{c.client_id}</TableCell>
+                  <TableCell>{c.type}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(c.client_id!)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

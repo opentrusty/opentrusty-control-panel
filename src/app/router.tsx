@@ -7,13 +7,14 @@ import TenantLayout from "./layout/TenantLayout";
 // Platform Admin Pages
 import PlatformOverview from "../pages/platform/Overview";
 import TenantList from "../pages/platform/TenantList";
+import TenantUsers from "../pages/platform/TenantUsers";
 import AdminList from "../pages/platform/AdminList";
 
 // Tenant Admin Pages
 import TenantOverview from "../pages/tenant/Overview";
 import UserList from "../pages/tenant/UserList";
 import ClientList from "../pages/tenant/ClientList";
-import ClientCreateWizard from "../pages/tenant/ClientCreateWizard";
+
 
 export const router = createBrowserRouter(
     [
@@ -48,6 +49,10 @@ export const router = createBrowserRouter(
                     element: <TenantList />,
                 },
                 {
+                    path: "tenants/:tenantId/users",
+                    element: <TenantUsers />,
+                },
+                {
                     path: "admins",
                     element: <AdminList />,
                 },
@@ -79,10 +84,7 @@ export const router = createBrowserRouter(
                     path: "clients",
                     element: <ClientList />,
                 },
-                {
-                    path: "clients/new",
-                    element: <ClientCreateWizard />,
-                },
+
             ],
         },
     ],

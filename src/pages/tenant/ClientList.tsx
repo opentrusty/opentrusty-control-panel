@@ -34,7 +34,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 
 type Client = paths["/tenants/{tenantID}/oauth2/clients"]["get"]["responses"][200]["content"]["application/json"]["clients"][number];
@@ -144,8 +144,10 @@ export default function ClientList() {
           setIsCreateOpen(open);
         }}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Register Client
+            <Button asChild>
+              <Link to={`/tenant/${tenantId}/clients/new`}>
+                <Plus className="mr-2 h-4 w-4" /> Register Client
+              </Link>
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -285,7 +287,12 @@ export default function ClientList() {
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell className="font-mono text-xs">{c.client_id}</TableCell>
                   <TableCell>{c.type}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/tenant/${tenantId}/clients/${c.client_id}`}>
+                        View
+                      </Link>
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleDelete(c.client_id!)}>
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>

@@ -14,6 +14,8 @@ import AdminList from "../pages/platform/AdminList";
 import TenantOverview from "../pages/tenant/Overview";
 import UserList from "../pages/tenant/UserList";
 import ClientList from "../pages/tenant/ClientList";
+import ClientCreateWizard from "../pages/tenant/ClientCreateWizard";
+import ClientDetails from "../pages/tenant/ClientDetails";
 
 
 export const router = createBrowserRouter(
@@ -83,6 +85,14 @@ export const router = createBrowserRouter(
                 {
                     path: "clients",
                     element: <ClientList />,
+                },
+                {
+                    path: "clients/new",
+                    element: <ClientCreateWizard />,
+                },
+                {
+                    path: "clients/:clientId",
+                    element: <ClientDetails />,
                 },
 
             ],

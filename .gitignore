@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Test Artifacts
+playwright-report/
+test-results/
+artifacts/tests/
+report.json
+results.json
+
+# Temporary Files
+.e2e-*.json
+*_output.txt
+vite_debug.txt

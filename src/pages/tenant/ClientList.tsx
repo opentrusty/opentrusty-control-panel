@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { client } from "../../api/client";
+import { oauthClientApi } from "../../app/api/oauthClientApi";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -66,13 +66,15 @@ export default function ClientList() {
     if (!tenantId) return;
     setIsLoading(true);
     // Using the manually patched GET method
-    const { data, error } = await client.GET("/tenants/{tenantID}/oauth2/clients", {
-      params: { path: { tenantID: tenantId } },
-    });
-    if (error) {
+    // Using the manually patched GET method
+    try {
+      const data = await oauthClientApi.list(tenantId);
+      if (data && data.clients) {
+        setClients(data.clients);
+      }
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to load clients");
-    } else if (data && data.clients) {
-      setClients(data.clients);
     }
     setIsLoading(false);
   };
@@ -87,45 +89,43 @@ export default function ClientList() {
     // Split redirect URIs by comma or newline
     const uris = values.redirect_uris.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
 
-    const { data, error } = await client.POST("/tenants/{tenantID}/oauth2/clients", {
-      params: { path: { tenantID: tenantId } },
-      body: {
-        client_name: values.name, // Mapped to client_name
+    try {
+      const data = await oauthClientApi.create(tenantId, {
+        client_name: values.name,
         redirect_uris: uris,
-        type: values.is_public ? "public" : "confidential",
-      },
-    });
+        allowed_scopes: ["openid", "profile", "email"], // Default scopes
+        grant_types: ["authorization_code", "refresh_token"], // Default grants
+        response_types: ["code"], // Default response types
+        token_endpoint_auth_method: values.is_public ? "none" : "client_secret_basic",
+      });
 
-    if (error) {
+      toast.success(`Client ${data.client.client_id} created successfully`);
+      // If confidential, show secret
+      if (data.client_secret) {
+        setNewClientSecret({ id: data.client.client_id, secret: data.client_secret });
+      } else {
+        setIsCreateOpen(false);
+      }
+      form.reset();
+      fetchClients();
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to create client");
-      return;
     }
-
-    toast.success(`Client ${data.client_id} created successfully`);
-    // If confidential, show secret
-    if (data.client_secret) {
-      setNewClientSecret({ id: data.client_id!, secret: data.client_secret });
-    } else {
-      setIsCreateOpen(false);
-    }
-    form.reset();
-    fetchClients();
   };
 
   const handleDelete = async (clientId: string) => {
     if (!tenantId) return;
     if (!confirm("Are you sure you want to delete this client?")) return;
 
-    const { error } = await client.DELETE("/tenants/{tenantID}/oauth2/clients/{clientID}", {
-      params: { path: { tenantID: tenantId, clientID: clientId } },
-    });
-
-    if (error) {
+    try {
+      await oauthClientApi.delete(tenantId, clientId);
+      toast.success("Client deleted");
+      fetchClients();
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to delete client");
-      return;
     }
-    toast.success("Client deleted");
-    fetchClients();
   };
 
   if (!tenantId) return <div>Invalid Tenant ID</div>;
@@ -144,10 +144,8 @@ export default function ClientList() {
           setIsCreateOpen(open);
         }}>
           <DialogTrigger asChild>
-            <Button asChild>
-              <Link to={`/tenant/${tenantId}/clients/new`}>
-                <Plus className="mr-2 h-4 w-4" /> Register Client
-              </Link>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Register Client
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -160,9 +158,9 @@ export default function ClientList() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2">
-                  <Label>Client ID</Label>
+                  <Label htmlFor="new-client-id">Client ID</Label>
                   <div className="flex items-center space-x-2">
-                    <Input value={newClientSecret.id} readOnly />
+                    <Input id="new-client-id" value={newClientSecret.id} readOnly />
                     <Button size="icon" variant="ghost" onClick={() => {
                       navigator.clipboard.writeText(newClientSecret.id);
                       toast.success("Copied ID");
@@ -172,9 +170,9 @@ export default function ClientList() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Client Secret</Label>
+                  <Label htmlFor="new-client-secret">Client Secret</Label>
                   <div className="flex items-center space-x-2">
-                    <Input value={newClientSecret.secret} readOnly />
+                    <Input id="new-client-secret" value={newClientSecret.secret} readOnly />
                     <Button size="icon" variant="ghost" onClick={() => {
                       navigator.clipboard.writeText(newClientSecret.secret);
                       toast.success("Copied Secret");

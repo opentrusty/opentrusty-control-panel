@@ -48,4 +48,18 @@ export const tenantApi = {
     async delete(tenantId: string): Promise<void> {
         return apiClient.delete<void>(`/tenants/${tenantId}`);
     },
+
+    /**
+     * List users in a tenant
+     */
+    async listUsers(tenantId: string): Promise<any[]> {
+        return apiClient.get<any[]>(`/tenants/${tenantId}/users`);
+    },
+
+    /**
+     * Provision user in a tenant
+     */
+    async provisionUser(tenantId: string, data: any): Promise<any> {
+        return apiClient.post<any>(`/tenants/${tenantId}/users`, data);
+    },
 };

@@ -49,6 +49,28 @@ export default function ClientCreateWizard() {
         toast.success("Copied to clipboard");
     };
 
+    const downloadJson = () => {
+        const config = {
+            client_id: createdClient.client_id,
+            client_secret: clientSecret,
+            client_name: createdClient.client_name,
+            client_type: formData.client_type,
+            redirect_uris: createdClient.redirect_uris,
+            allowed_scopes: createdClient.allowed_scopes,
+            issuer: window.location.origin.replace('console', 'auth'), // Assumption
+            discovery_url: window.location.origin.replace('console', 'auth') + "/.well-known/openid-configuration",
+            token_endpoint: window.location.origin.replace('console', 'auth') + "/oauth2/token",
+            authorization_endpoint: window.location.origin.replace('console', 'auth') + "/oauth2/authorize",
+        };
+        const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `opentrusty-client-${createdClient.client_id}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     if (step === 'confirmation') {
         return (
             <div className="max-w-xl mx-auto py-8">
@@ -111,6 +133,12 @@ export default function ClientCreateWizard() {
                         </div>
 
                         <div className="mt-8 flex justify-end gap-3">
+                            <button
+                                onClick={downloadJson}
+                                className="inline-flex items-center px-4 py-2 border border-blue-600 shadow-sm text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50"
+                            >
+                                Download as JSON
+                            </button>
                             <button
                                 onClick={() => navigate(`/tenant/${tenantId}/clients`)}
                                 className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../app/auth/AuthContext";
 
@@ -8,8 +8,22 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const { login, isPlatformAdmin, tenantId } = useAuth();
+    const { login, isPlatformAdmin, tenantId, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+
+    // Handle post-login redirection via effect to avoid stale state
+    useEffect(() => {
+        if (isAuthenticated) {
+            if (isPlatformAdmin) {
+                navigate("/platform/tenants");
+            } else if (tenantId) {
+                navigate(`/tenant/${tenantId}/overview`);
+            } else {
+                setError("No admin role assigned");
+                setIsLoading(false);
+            }
+        }
+    }, [isAuthenticated, isPlatformAdmin, tenantId, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -18,18 +32,8 @@ export default function LoginPage() {
 
         try {
             await login(email, password);
-
-            // Post-login routing per control-plane-ui-capabilities.md
-            if (isPlatformAdmin) {
-                navigate("/platform/tenants");
-            } else if (tenantId) {
-                navigate(`/tenant/${tenantId}/overview`);
-            } else {
-                setError("No admin role assigned");
-            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Login failed");
-        } finally {
             setIsLoading(false);
         }
     };

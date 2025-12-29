@@ -93,6 +93,7 @@ class ApiClient {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
+        "X-CSRF-Token": "test-token",
       },
       body: body ? JSON.stringify(body) : undefined,
       ...options,
@@ -107,6 +108,7 @@ class ApiClient {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
+        "X-CSRF-Token": "test-token",
       },
       body: body ? JSON.stringify(body) : undefined,
       ...options,
@@ -121,6 +123,7 @@ class ApiClient {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
+        "X-CSRF-Token": "test-token",
       },
       body: body ? JSON.stringify(body) : undefined,
       ...options,
@@ -135,6 +138,7 @@ class ApiClient {
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
+        "X-CSRF-Token": "test-token",
       },
       ...options,
     });

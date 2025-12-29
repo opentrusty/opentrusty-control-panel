@@ -1,8 +1,9 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 export default function TenantLayout() {
     const { user, tenantName, logout } = useAuth();
+    const { tenantId } = useParams<{ tenantId: string }>();
     const location = useLocation();
 
     const isActive = (path: string) => location.pathname.startsWith(path);
@@ -18,19 +19,19 @@ export default function TenantLayout() {
 
                 <nav className="mt-8">
                     <Link
-                        to="/tenant/overview"
+                        to={`/tenant/${tenantId || ''}/overview`}
                         className={`block px-4 py-2 hover:bg-gray-800 ${isActive('/tenant/overview') ? 'bg-gray-800 text-white' : 'text-gray-300'}`}
                     >
                         Overview
                     </Link>
                     <Link
-                        to="/tenant/users"
+                        to={`/tenant/${tenantId || ''}/users`}
                         className={`block px-4 py-2 hover:bg-gray-800 ${isActive('/tenant/users') ? 'bg-gray-800 text-white' : 'text-gray-300'}`}
                     >
                         Users
                     </Link>
                     <Link
-                        to="/tenant/clients"
+                        to={`/tenant/${tenantId || ''}/clients`}
                         className={`block px-4 py-2 hover:bg-gray-800 ${isActive('/tenant/clients') ? 'bg-gray-800 text-white' : 'text-gray-300'}`}
                     >
                         OAuth Clients
@@ -41,10 +42,16 @@ export default function TenantLayout() {
                         </p>
                     </div>
                     <Link
-                        to="/tenant/audit"
+                        to={`/tenant/${tenantId || ''}/audit`}
                         className={`block px-4 py-2 hover:bg-gray-800 ${isActive('/tenant/audit') ? 'bg-gray-800 text-white' : 'text-gray-300'}`}
                     >
                         Audit Logs
+                    </Link>
+                    <Link
+                        to={`/tenant/${tenantId || ''}/branding`}
+                        className={`block px-4 py-2 hover:bg-gray-800 ${isActive('/tenant/branding') ? 'bg-gray-800 text-white' : 'text-gray-300'}`}
+                    >
+                        Branding
                     </Link>
                 </nav>
             </aside>

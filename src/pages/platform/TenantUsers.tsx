@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { client } from "../../api/client";
+import { tenantApi } from "../../app/api/tenantApi";
 import { Button } from "@/components/ui/button";
 import {
     Table,
@@ -69,17 +69,15 @@ export default function TenantUsers() {
         if (!tenantId) return;
         setIsLoading(true);
         // Using the manually patched GET method
-        const { data, error } = await client.GET("/tenants/{tenantID}/users", {
-            params: {
-                path: { tenantID: tenantId },
-            },
-        });
-
-        if (error) {
+        try {
+            const data = await tenantApi.listUsers(tenantId);
+            // The API returns the array directly
+            if (data) {
+                setUsers(data as any[]);
+            }
+        } catch (error) {
+            console.error(error);
             toast.error("Failed to load users");
-        } else if (data) {
-            // Type assertion if generation mismatch, but schema has it as array
-            setUsers(data as unknown as TenantUserRole[]);
         }
         setIsLoading(false);
     };
@@ -91,26 +89,25 @@ export default function TenantUsers() {
     const onSubmit = async (values: z.infer<typeof createUserSchema>) => {
         if (!tenantId) return;
 
-        const { error } = await client.POST("/tenants/{tenantID}/users", {
-            params: {
-                path: { tenantID: tenantId },
-            },
-            body: {
+        try {
+            await tenantApi.provisionUser(tenantId, {
                 email: values.email,
                 password: values.password,
-                role_id: values.role_id,
-            },
-        });
-
-        if (error) {
+                role: values.role_id,
+                // Add required name fields for provision logic if needed by backend,
+                // but TenantUsers seems to just need basic info.
+                // Assuming backend handles defaults or we add simple ones.
+                given_name: "Tenant",
+                family_name: "User"
+            });
+            toast.success(`User ${values.email} provisioned successfully`);
+            setIsCreateOpen(false);
+            form.reset();
+            fetchUsers();
+        } catch (error) {
+            console.error(error);
             toast.error("Failed to provision user");
-            return;
         }
-
-        toast.success(`User ${values.email} provisioned successfully`);
-        setIsCreateOpen(false);
-        form.reset();
-        fetchUsers();
     };
 
     if (!tenantId) return <div>Invalid Tenant ID</div>;

@@ -16,6 +16,10 @@ import UserList from "../pages/tenant/UserList";
 import ClientList from "../pages/tenant/ClientList";
 import ClientCreateWizard from "../pages/tenant/ClientCreateWizard";
 import ClientDetails from "../pages/tenant/ClientDetails";
+import AuditList from "../pages/tenant/AuditList";
+import PlatformAudit from "../pages/platform/PlatformAudit";
+import SystemSettings from "../pages/platform/SystemSettings";
+import Branding from "../pages/tenant/Branding";
 
 
 export const router = createBrowserRouter(
@@ -58,6 +62,14 @@ export const router = createBrowserRouter(
                     path: "admins",
                     element: <AdminList />,
                 },
+                {
+                    path: "audit",
+                    element: <PlatformAudit />,
+                },
+                {
+                    path: "settings",
+                    element: <SystemSettings />,
+                },
             ],
         },
         {
@@ -94,7 +106,14 @@ export const router = createBrowserRouter(
                     path: "clients/:clientId",
                     element: <ClientDetails />,
                 },
-
+                {
+                    path: "audit",
+                    element: <AuditList />,
+                },
+                {
+                    path: "branding",
+                    element: <Branding />,
+                },
             ],
         },
     ],

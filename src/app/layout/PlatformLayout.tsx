@@ -25,6 +25,18 @@ export default function PlatformLayout() {
                     >
                         Platform Admins
                     </Link>
+                    <Link
+                        to="/platform/audit"
+                        className="block px-4 py-2 hover:bg-gray-800"
+                    >
+                        Audit Logs
+                    </Link>
+                    <Link
+                        to="/platform/settings"
+                        className="block px-4 py-2 hover:bg-gray-800"
+                    >
+                        System Settings
+                    </Link>
                 </nav>
             </aside>
 

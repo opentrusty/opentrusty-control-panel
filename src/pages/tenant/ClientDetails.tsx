@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { client } from "../../api/client";
+import { oauthClientApi } from "../../app/api/oauthClientApi";
 import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
@@ -23,13 +22,15 @@ export default function ClientDetails() {
     const fetchClient = async () => {
         if (!tenantId || !clientId) return;
         setIsLoading(true);
-        const { data, error } = await client.GET("/tenants/{tenantID}/oauth2/clients/{clientID}", {
-            params: { path: { tenantID: tenantId, clientID: clientId } },
-        });
-        if (error) {
-            toast.error("Failed to load client details");
-        } else if (data) {
+        if (!tenantId || !clientId) return;
+        setIsLoading(true);
+        try {
+            const data = await oauthClientApi.get(tenantId, clientId);
+            // The API returns the object directly
             setOauthClient(data as unknown as Client);
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to load client details");
         }
         setIsLoading(false);
     };

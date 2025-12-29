@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { client } from "../../api/client";
+import { tenantApi } from "../../app/api/tenantApi";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -68,17 +68,12 @@ export default function UserList() {
   const fetchUsers = async () => {
     if (!tenantId) return;
     setIsLoading(true);
-    // Using the manually patched GET method
-    const { data, error } = await client.GET("/tenants/{tenantID}/users", {
-      params: {
-        path: { tenantID: tenantId },
-      },
-    });
-
-    if (error) {
+    try {
+      const data = await tenantApi.listUsers(tenantId);
+      if (data) setUsers(data as any[]);
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to load users");
-    } else if (data) {
-      setUsers(data as unknown as TenantUserRole[]);
     }
     setIsLoading(false);
   };
@@ -90,26 +85,20 @@ export default function UserList() {
   const onSubmit = async (values: z.infer<typeof createUserSchema>) => {
     if (!tenantId) return;
 
-    const { error } = await client.POST("/tenants/{tenantID}/users", {
-      params: {
-        path: { tenantID: tenantId },
-      },
-      body: {
+    try {
+      await tenantApi.provisionUser(tenantId, {
         email: values.email,
         password: values.password,
         role_id: values.role_id,
-      },
-    });
-
-    if (error) {
+      });
+      toast.success(`User provisioned successfully`);
+      setIsCreateOpen(false);
+      form.reset();
+      fetchUsers();
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to provision user");
-      return;
     }
-
-    toast.success(`User provisioned successfully`);
-    setIsCreateOpen(false);
-    form.reset();
-    fetchUsers();
   };
 
   return (

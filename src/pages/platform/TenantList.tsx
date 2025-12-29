@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { client } from "../../api/client";
+import { tenantApi } from "../../app/api/tenantApi";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -55,13 +55,22 @@ export default function TenantList() {
 
   const fetchTenants = async () => {
     setIsLoading(true);
-    const { data, error } = await client.GET("/tenants");
-    if (error) {
+    try {
+      const data = await tenantApi.list();
+      // tenantApi returns the array directly
+      if (Array.isArray(data)) {
+        setTenants(data);
+      } else {
+        // Fallback/Safety check
+        console.error("Unexpected response format:", data);
+        setTenants([]);
+      }
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to load tenants");
-    } else if (data && data.tenants) {
-      setTenants(data.tenants);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -69,21 +78,22 @@ export default function TenantList() {
   }, []);
 
   const onSubmit = async (values: z.infer<typeof createTenantSchema>) => {
-    const { data, error } = await client.POST("/tenants", {
-      body: {
+    try {
+      const newTenant = await tenantApi.create({
         name: values.name,
-      },
-    });
+      });
 
-    if (error) {
-      toast.error("Failed to create tenant");
-      return;
+      toast.success(`Tenant ${newTenant.name} created successfully`, {
+        description: `ID: ${newTenant.id}. You can now configure this workspace.`,
+        duration: 5000,
+      });
+      setIsCreateOpen(false);
+      form.reset();
+      fetchTenants();
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "Failed to create tenant");
     }
-
-    toast.success(`Tenant ${data.name} created successfully`);
-    setIsCreateOpen(false);
-    form.reset();
-    fetchTenants();
   };
 
   return (

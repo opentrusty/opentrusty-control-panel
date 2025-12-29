@@ -33,10 +33,10 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
-      // API Routes -> Admin Plane (8081)
+      // API Routes -> Admin Plane (8080 in all-in-one mode)
       // Handles everything else under /api
       '^/api': {
-        target: 'http://localhost:8081',
+        target: 'http://localhost:8080',
         changeOrigin: true,
       },
     }

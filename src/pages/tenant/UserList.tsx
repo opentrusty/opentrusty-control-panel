@@ -42,7 +42,10 @@ import {
 } from "@/components/ui/select";
 import { useParams } from "react-router-dom";
 
-type TenantUserRole = components["schemas"]["github_com_opentrusty_opentrusty_internal_tenant.TenantUserRole"];
+type TenantUserRole = components["schemas"]["github_com_opentrusty_opentrusty_internal_tenant.TenantUserRole"] & {
+  email: string;
+  full_name: string;
+};
 
 const createUserSchema = z.object({
   email: z.string().email(),
@@ -242,7 +245,8 @@ export default function UserList() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User ID</TableHead>
+              <TableHead>User</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Joined At</TableHead>
             </TableRow>
@@ -250,20 +254,26 @@ export default function UserList() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
+                <TableCell colSpan={4} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
+                <TableCell colSpan={4} className="h-24 text-center">
                   No users found.
                 </TableCell>
               </TableRow>
             ) : (
               users.map((u) => (
                 <TableRow key={u.user_id}>
-                  <TableCell className="font-mono text-xs">{u.user_id}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-bold">{u.full_name || "Unknown"}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground">{u.user_id}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{u.email}</TableCell>
                   <TableCell>{u.role}</TableCell>
                   <TableCell>{u.granted_at ? new Date(u.granted_at).toLocaleDateString() : "-"}</TableCell>
                 </TableRow>

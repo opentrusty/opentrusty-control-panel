@@ -9,64 +9,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Copy } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import type { paths } from "../../api/generated/schema";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { useParams, Link } from "react-router-dom";
-import { Checkbox } from "@/components/ui/checkbox";
 
 type Client = paths["/tenants/{tenantID}/oauth2/clients"]["get"]["responses"][200]["content"]["application/json"]["clients"][number];
-
-const createClientSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  redirect_uris: z.string().min(1, "At least one redirect URI is required"),
-  is_public: z.boolean().default(false),
-});
 
 export default function ClientList() {
   const { tenantId } = useParams<{ tenantId: string }>();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  // State to show generated secret
-  const [newClientSecret, setNewClientSecret] = useState<{ id: string, secret: string } | null>(null);
-
-  const form = useForm<z.infer<typeof createClientSchema>>({
-    resolver: zodResolver(createClientSchema) as any,
-    defaultValues: {
-      name: "",
-      redirect_uris: "",
-      is_public: false,
-    },
-  });
 
   const fetchClients = async () => {
     if (!tenantId) return;
     setIsLoading(true);
-    // Using the manually patched GET method
-    // Using the manually patched GET method
     try {
       const data = await oauthClientApi.list(tenantId);
       if (data && data.clients) {
@@ -82,37 +39,6 @@ export default function ClientList() {
   useEffect(() => {
     fetchClients();
   }, [tenantId]);
-
-  const onSubmit = async (values: z.infer<typeof createClientSchema>) => {
-    if (!tenantId) return;
-
-    // Split redirect URIs by comma or newline
-    const uris = values.redirect_uris.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
-
-    try {
-      const data = await oauthClientApi.create(tenantId, {
-        client_name: values.name,
-        redirect_uris: uris,
-        allowed_scopes: ["openid", "profile", "email"], // Default scopes
-        grant_types: ["authorization_code", "refresh_token"], // Default grants
-        response_types: ["code"], // Default response types
-        token_endpoint_auth_method: values.is_public ? "none" : "client_secret_basic",
-      });
-
-      toast.success(`Client ${data.client.client_id} created successfully`);
-      // If confidential, show secret
-      if (data.client_secret) {
-        setNewClientSecret({ id: data.client.client_id, secret: data.client_secret });
-      } else {
-        setIsCreateOpen(false);
-      }
-      form.reset();
-      fetchClients();
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to create client");
-    }
-  };
 
   const handleDelete = async (clientId: string) => {
     if (!tenantId) return;
@@ -139,121 +65,11 @@ export default function ClientList() {
             Manage applications and API credentials.
           </p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={(open: boolean) => {
-          if (!open) setNewClientSecret(null); // Clear secret when closing
-          setIsCreateOpen(open);
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Register Client
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            {newClientSecret ? (
-              <div className="space-y-4">
-                <DialogHeader>
-                  <DialogTitle>Client Created</DialogTitle>
-                  <DialogDescription>
-                    Please copy your client secret now. It will not be shown again.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-2">
-                  <Label htmlFor="new-client-id">Client ID</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input id="new-client-id" value={newClientSecret.id} readOnly />
-                    <Button size="icon" variant="ghost" onClick={() => {
-                      navigator.clipboard.writeText(newClientSecret.id);
-                      toast.success("Copied ID");
-                    }}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-client-secret">Client Secret</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input id="new-client-secret" value={newClientSecret.secret} readOnly />
-                    <Button size="icon" variant="ghost" onClick={() => {
-                      navigator.clipboard.writeText(newClientSecret.secret);
-                      toast.success("Copied Secret");
-                    }}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={() => setIsCreateOpen(false)}>Done</Button>
-                </DialogFooter>
-              </div>
-            ) : (
-              <>
-                <DialogHeader>
-                  <DialogTitle>Register New Client</DialogTitle>
-                  <DialogDescription>
-                    Create a new OAuth2 client application.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4">
-                    <FormField
-                      control={form.control as any}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Client Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="My App" {...field} value={field.value as string} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control as any}
-                      name="redirect_uris"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Redirect URIs (comma separated)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="http://localhost:3000/callback" {...field} value={field.value as string} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control as any}
-                      name="is_public"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value as boolean}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>
-                              Public Client
-                            </FormLabel>
-                            <p className="text-sm text-muted-foreground">
-                              Check if this is a SPA or Mobile app (No client secret).
-                            </p>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    <DialogFooter>
-                      <Button type="submit" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting ? "Registering..." : "Register Client"}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
+        <Button asChild>
+          <Link to={`/tenant/${tenantId}/clients/new`}>
+            <Plus className="mr-2 h-4 w-4" /> Register Client
+          </Link>
+        </Button>
       </div>
 
       <div className="border rounded-md">

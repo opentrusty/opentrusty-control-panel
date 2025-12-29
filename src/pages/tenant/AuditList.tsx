@@ -1,15 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { auditApi } from "../../app/api/auditApi";
-
-interface AuditEvent {
-    id: string;
-    type: string;
-    resource: string;
-    actor_id: string;
-    created_at: string;
-    metadata?: Record<string, unknown>;
-}
+import { auditApi, type AuditEvent } from "../../app/api/auditApi";
 
 export default function AuditList() {
     const { tenantId } = useParams<{ tenantId: string }>();
@@ -38,23 +29,23 @@ export default function AuditList() {
     }, [tenantId]);
 
     if (loading) {
-        return <div className="p-4">Loading audit logs...</div>;
+        return <div className="p-4 text-center text-gray-400">Loading audit logs...</div>;
     }
 
     if (error) {
-        return <div className="p-4 text-red-600">{error}</div>;
+        return <div className="p-4 text-red-600 bg-red-50 rounded-lg">{error}</div>;
     }
 
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
-                <p className="mt-1 text-sm text-gray-500">
+                <h1 className="text-2xl font-bold text-gray-900 italic">Audit Logs</h1>
+                <p className="mt-1 text-sm text-gray-500 font-medium uppercase tracking-widest text-gray-400">
                     A record of all sensitive actions within this tenant.
                 </p>
             </div>
 
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div className="bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
@@ -86,7 +77,7 @@ export default function AuditList() {
                                         {event.resource}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {event.actor_id}
+                                        {event.actor_name || event.actor_id}
                                     </td>
                                 </tr>
                             ))

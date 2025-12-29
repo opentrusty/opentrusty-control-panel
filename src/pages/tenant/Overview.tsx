@@ -16,6 +16,7 @@ import { auditApi } from "../../app/api/auditApi";
 export default function TenantOverview() {
   const { tenantId } = useParams<{ tenantId: string }>();
   const [clients, setClients] = useState<any[]>([]);
+  const [tenant, setTenant] = useState<any>(null);
   const [usersCount, setUsersCount] = useState(0);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,14 +29,16 @@ export default function TenantOverview() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [cRes, uRes, aRes] = await Promise.all([
+        const [cRes, uRes, aRes, tRes] = await Promise.all([
           oauthClientApi.list(tenantId),
           tenantApi.listUsers(tenantId),
-          auditApi.listTenant(tenantId, { limit: 5 })
+          auditApi.listTenant(tenantId, { limit: 5 }),
+          tenantApi.get(tenantId)
         ]);
         setClients(cRes.clients || []);
         setUsersCount((uRes || []).length);
         setRecentActivity(aRes.events || []);
+        setTenant(tRes);
       } catch (err) {
         console.error("Failed to fetch tenant overview data:", err);
       } finally {
@@ -54,9 +57,11 @@ export default function TenantOverview() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-black tracking-tight text-gray-900 italic">Workspace Overview</h2>
+        <h2 className="text-3xl font-black tracking-tight text-gray-900 italic">
+          {tenant?.name || "Workspace Overview"}
+        </h2>
         <p className="text-muted-foreground mt-1 text-sm font-medium uppercase tracking-widest text-gray-400">
-          Control Plane for {tenantId}
+          Control Plane for {tenant?.name || tenantId}
         </p>
       </div>
 
@@ -158,7 +163,9 @@ export default function TenantOverview() {
                     <div className="w-2 h-2 rounded-full bg-blue-400"></div>
                     <div>
                       <div className="text-xs font-bold text-gray-900 capitalize">{event.type.replace(/_/g, ' ')}</div>
-                      <div className="text-[10px] text-gray-500 font-mono mt-0.5">{event.resource}</div>
+                      <div className="text-[10px] text-gray-500 font-medium mt-0.5">
+                        {event.actor_name || event.actor_id} • {event.resource}
+                      </div>
                     </div>
                   </div>
                   <div className="text-[10px] text-gray-400 font-bold">{new Date(event.created_at).toLocaleTimeString()}</div>

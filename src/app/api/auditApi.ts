@@ -2,11 +2,12 @@
 
 import { apiClient } from "./client";
 
-interface AuditEvent {
+export interface AuditEvent {
     id: string;
     type: string;
     tenant_id?: string;
     actor_id: string;
+    actor_name?: string;
     resource: string;
     ip_address?: string;
     user_agent?: string;
@@ -15,6 +16,7 @@ interface AuditEvent {
 }
 
 interface ListAuditEventsParams {
+    all_tenants?: boolean;
     limit?: number;
     offset?: number;
     event_type?: string;

@@ -14,16 +14,16 @@ export default function PlatformLayout() {
 
                 <nav className="mt-8">
                     <Link
-                        to="/platform/tenants"
-                        className="block px-4 py-2 hover:bg-gray-800"
-                    >
-                        Tenants
-                    </Link>
-                    <Link
                         to="/platform/admins"
                         className="block px-4 py-2 hover:bg-gray-800"
                     >
                         Platform Admins
+                    </Link>
+                    <Link
+                        to="/platform/tenants"
+                        className="block px-4 py-2 hover:bg-gray-800"
+                    >
+                        Tenants
                     </Link>
                     <Link
                         to="/platform/audit"

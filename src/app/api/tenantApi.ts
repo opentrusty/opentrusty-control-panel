@@ -11,6 +11,19 @@ interface Tenant {
 
 interface CreateTenantRequest {
     name: string;
+    admin_email?: string;
+    admin_name?: string;
+}
+
+interface CreateTenantResponse extends Tenant {
+    admin_credentials?: {
+        email: string;
+        password: string;
+        warning: string;
+    };
+    admin_email?: string;
+    admin_password?: string;
+    password_warning?: string;
 }
 
 export const tenantApi = {
@@ -31,8 +44,8 @@ export const tenantApi = {
     /**
      * Create new tenant (platform admin only)
      */
-    async create(data: CreateTenantRequest): Promise<Tenant> {
-        return apiClient.post<Tenant>("/tenants", data);
+    async create(data: CreateTenantRequest): Promise<CreateTenantResponse> {
+        return apiClient.post<CreateTenantResponse>("/tenants", data);
     },
 
     /**

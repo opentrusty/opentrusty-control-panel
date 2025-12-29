@@ -39,6 +39,8 @@ type Tenant = components["schemas"]["github_com_opentrusty_opentrusty_internal_t
 
 const createTenantSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
+  adminEmail: z.string().email("Invalid email address").optional().or(z.literal("")),
+  adminName: z.string().optional(),
 });
 
 export default function TenantList() {
@@ -46,10 +48,14 @@ export default function TenantList() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const [createdCreds, setCreatedCreds] = useState<{ email: string, password: string } | null>(null);
+
   const form = useForm<z.infer<typeof createTenantSchema>>({
     resolver: zodResolver(createTenantSchema),
     defaultValues: {
       name: "",
+      adminEmail: "",
+      adminName: "",
     },
   });
 
@@ -81,12 +87,22 @@ export default function TenantList() {
     try {
       const newTenant = await tenantApi.create({
         name: values.name,
+        admin_email: values.adminEmail || undefined,
+        admin_name: values.adminName || undefined,
       });
 
-      toast.success(`Tenant ${newTenant.name} created successfully`, {
-        description: `ID: ${newTenant.id}. You can now configure this workspace.`,
-        duration: 5000,
-      });
+      if (newTenant.admin_password) {
+        setCreatedCreds({
+          email: newTenant.admin_email!,
+          password: newTenant.admin_password!
+        });
+        toast.success(`Tenant ${newTenant.name} created successfully`);
+      } else {
+        toast.success(`Tenant ${newTenant.name} created successfully`, {
+          description: `Next: Click "Manage users" to provision an initial tenant administrator.`,
+          duration: 5000,
+        });
+      }
       setIsCreateOpen(false);
       form.reset();
       fetchTenants();
@@ -115,7 +131,7 @@ export default function TenantList() {
             <DialogHeader>
               <DialogTitle>Create New Tenant</DialogTitle>
               <DialogDescription>
-                Add a new tenant to the platform. You will be automatically assigned as the tenant admin.
+                Add a new tenant to the platform. After creation, use "Manage users" to provision an initial tenant administrator.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -133,6 +149,35 @@ export default function TenantList() {
                     </FormItem>
                   )}
                 />
+                <div className="space-y-4 border-t pt-4">
+                  <h4 className="font-medium text-sm">Initial Administrator (Optional)</h4>
+                  <FormField
+                    control={form.control}
+                    name="adminName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Admin Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="adminEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Admin Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="admin@example.com" type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <DialogFooter>
                   <Button type="submit" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting ? "Creating..." : "Create Tenant"}
@@ -140,6 +185,30 @@ export default function TenantList() {
                 </DialogFooter>
               </form>
             </Form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!createdCreds} onOpenChange={(open) => !open && setCreatedCreds(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Tenant Created Successfully</DialogTitle>
+              <DialogDescription>
+                Initial administrator credentials have been generated.
+                <br />
+                <strong>Please copy them now. They will not be shown again.</strong>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 p-4 bg-muted rounded-md text-sm font-mono">
+              <div className="grid grid-cols-[80px_1fr] gap-2">
+                <span className="text-muted-foreground">Email:</span>
+                <span className="select-all">{createdCreds?.email}</span>
+                <span className="text-muted-foreground">Password:</span>
+                <span className="select-all font-bold">{createdCreds?.password}</span>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setCreatedCreds(null)}>Close</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

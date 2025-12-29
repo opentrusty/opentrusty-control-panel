@@ -13,10 +13,11 @@ test.describe('A. Platform Bootstrap', () => {
         await expect(page.getByText('Control Plane Login')).toBeVisible({ timeout: 10000 });
 
         // 3. Enter Credentials
-        // NOTE: Using the known bootstrap credentials. In a real scenario, these might come from ENV.
-        await page.getByLabel('Email').fill('admin@platform.local');
-        // Using actual generated password from logs
-        await page.getByLabel('Password').fill('Cw6ugqR1ZdTxKfYMt0iyrg!');
+        // Read from environment variables for portability
+        const email = process.env.BOOTSTRAP_EMAIL || 'admin@platform.local';
+        const password = process.env.BOOTSTRAP_PASSWORD || 'adminadmin';
+        await page.getByLabel('Email').fill(email);
+        await page.getByLabel('Password').fill(password);
 
         // 4. Submit
         await page.getByRole('button', { name: /Login/i }).click();

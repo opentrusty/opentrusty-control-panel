@@ -82,15 +82,23 @@ export default function UserList() {
     fetchUsers();
   }, [tenantId]);
 
+  const [provisionedCreds, setProvisionedCreds] = useState<{ email: string; password: string } | null>(null);
+
   const onSubmit = async (values: z.infer<typeof createUserSchema>) => {
     if (!tenantId) return;
 
     try {
-      await tenantApi.provisionUser(tenantId, {
+      const response = await tenantApi.provisionUser(tenantId, {
         email: values.email,
         password: values.password,
         role_id: values.role_id,
       });
+      // Backend now returns password in the response for one-time display
+      if (response && (response as any).password) {
+        setProvisionedCreds({ email: values.email, password: (response as any).password });
+      } else {
+        setProvisionedCreds({ email: values.email, password: values.password });
+      }
       toast.success(`User provisioned successfully`);
       setIsCreateOpen(false);
       form.reset();
@@ -99,6 +107,11 @@ export default function UserList() {
       console.error(error);
       toast.error("Failed to provision user");
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard");
   };
 
   return (
@@ -180,6 +193,47 @@ export default function UserList() {
                 </DialogFooter>
               </form>
             </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Credentials Display Dialog */}
+        <Dialog open={provisionedCreds !== null} onOpenChange={() => setProvisionedCreds(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>User Provisioned Successfully</DialogTitle>
+              <DialogDescription>
+                <span className="text-amber-600 font-semibold">
+                  ⚠️ This password will not be shown again. Copy it now.
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Email</label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 p-2 bg-gray-100 rounded font-mono text-sm">
+                    {provisionedCreds?.email}
+                  </code>
+                  <Button size="sm" variant="outline" onClick={() => copyToClipboard(provisionedCreds?.email || "")}>
+                    Copy
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Password</label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 p-2 bg-gray-100 rounded font-mono text-sm">
+                    {provisionedCreds?.password}
+                  </code>
+                  <Button size="sm" variant="outline" onClick={() => copyToClipboard(provisionedCreds?.password || "")}>
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setProvisionedCreds(null)}>Done</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

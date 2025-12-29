@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { writeFileSync } from 'fs';
+import { writeFileSync, readFileSync } from 'fs';
 
 const TEST_STATE_FILE = '.e2e-state.json';
 const TENANT_USER_FILE = '.e2e-tenant-user.json';
@@ -59,7 +59,6 @@ test.describe('B. Tenant Lifecycle', () => {
             console.log('Form validation errors:', errors);
         }
 
-
         // Explicitly target the submit button within the dialog
         const dialog = page.getByRole('dialog');
         await dialog.getByRole('button', { name: 'Provision User' }).click();
@@ -97,5 +96,32 @@ test.describe('B. Tenant Lifecycle', () => {
         // Verify URL context
         await expect(page).toHaveURL(/\/admin\/platform\/tenants\/[a-zA-Z0-9-]+\/users/);
         await expect(page.getByRole('heading', { name: 'Tenant Users' })).toBeVisible();
+    });
+
+    test('UI-03-B: Verify Tenant Admin Login', async ({ browser }) => {
+        // Read the provisioned user credentials
+        let user;
+        try {
+            user = JSON.parse(readFileSync(TENANT_USER_FILE, 'utf-8'));
+        } catch (e) {
+            test.skip();
+            return;
+        }
+
+        const context = await browser.newContext({ storageState: undefined });
+        const page = await context.newPage();
+
+        await page.goto('/admin/login');
+        await page.getByLabel('Email').fill(user.email);
+        await page.getByLabel('Password').fill(user.password);
+        await page.getByRole('button', { name: /Login/i }).click();
+
+        // Verification: If login succeeds and role is correct, we should see the dashboard
+        // and NOT a 403 or Login page again.
+        await expect(page).toHaveURL(/\/admin\/tenant\/.*\/overview/);
+
+        // Also verify /auth/me didn't fail (implied by dashboard loading, but check text)
+        await expect(page.getByText(user.email)).toBeVisible();
+        await context.close();
     });
 });

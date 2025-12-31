@@ -7,13 +7,16 @@ import { RequirePlatformAdmin, RequireTenantAccess } from "./auth/RouteGuards";
 import PlatformLayout from "./layout/PlatformLayout";
 import TenantLayout from "./layout/TenantLayout";
 import TenantList from "../pages/platform/TenantList";
+import PlatformAudit from "../pages/platform/PlatformAudit";
 import TenantOverview from "../pages/tenant/TenantOverview";
+import UserList from "../pages/tenant/UserList";
+import ClientList from "../pages/tenant/ClientList";
+import AuditList from "../pages/tenant/AuditList";
+import Branding from "../pages/tenant/Branding";
 
 // Stub pages
 const AdminList = () => <div className="p-4"><h1>Platform Admins</h1><p>Coming soon...</p></div>;
-const TenantUsers = () => <div className="p-4"><h1>Tenant Users</h1><p>User management coming soon...</p></div>;
-const TenantClients = () => <div className="p-4"><h1>OAuth Clients</h1><p>Client management coming soon...</p></div>;
-const TenantAudit = () => <div className="p-4"><h1>Audit Logs</h1><p>Audit logging viewer coming soon...</p></div>;
+const SystemSettings = () => <div className="p-4"><h1>System Settings</h1><p>Coming soon...</p></div>;
 
 const AccessDenied = () => (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -39,6 +42,8 @@ export default function App() {
                         <Route path="/platform" element={<PlatformLayout />}>
                             <Route path="tenants" element={<TenantList />} />
                             <Route path="admins" element={<AdminList />} />
+                            <Route path="audit" element={<PlatformAudit />} />
+                            <Route path="settings" element={<SystemSettings />} />
                         </Route>
                     </Route>
 
@@ -46,9 +51,10 @@ export default function App() {
                     <Route element={<RequireTenantAccess />}>
                         <Route path="/tenant" element={<TenantLayout />}>
                             <Route path="overview" element={<TenantOverview />} />
-                            <Route path="users" element={<TenantUsers />} />
-                            <Route path="clients" element={<TenantClients />} />
-                            <Route path="audit" element={<TenantAudit />} />
+                            <Route path="users" element={<UserList />} />
+                            <Route path="clients" element={<ClientList />} />
+                            <Route path="audit" element={<AuditList />} />
+                            <Route path="branding" element={<Branding />} />
                         </Route>
                     </Route>
                 </Route>

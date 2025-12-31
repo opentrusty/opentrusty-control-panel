@@ -9,6 +9,12 @@ interface Tenant {
     status: "active" | "suspended" | "deleted";
 }
 
+export interface TenantMetrics {
+    total_users: number;
+    total_clients: number;
+    audit_count_24h: number;
+}
+
 interface CreateTenantRequest {
     name: string;
     admin_email?: string;
@@ -74,5 +80,33 @@ export const tenantApi = {
      */
     async provisionUser(tenantId: string, data: any): Promise<any> {
         return apiClient.post<any>(`/tenants/${tenantId}/users`, data);
+    },
+
+    /**
+     * Get tenant metrics
+     */
+    async getMetrics(tenantId: string): Promise<TenantMetrics> {
+        return apiClient.get<TenantMetrics>(`/tenants/${tenantId}/metrics`);
+    },
+
+    /**
+     * Assign role to user
+     */
+    async assignRole(tenantId: string, userId: string, role: string): Promise<void> {
+        return apiClient.post<void>(`/tenants/${tenantId}/users/${userId}/roles`, { role });
+    },
+
+    /**
+     * Revoke role from user
+     */
+    async revokeRole(tenantId: string, userId: string, role: string): Promise<void> {
+        return apiClient.delete<void>(`/tenants/${tenantId}/users/${userId}/roles/${role}`);
+    },
+
+    /**
+     * Update user profile (nickname)
+     */
+    async updateUserNickname(tenantId: string, userId: string, nickname: string): Promise<void> {
+        return apiClient.patch<void>(`/tenants/${tenantId}/users/${userId}`, { nickname });
     },
 };

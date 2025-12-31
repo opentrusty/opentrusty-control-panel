@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Users } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { components } from "../../api/generated/schema";
 import {
   Dialog,
@@ -33,7 +33,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Link } from "react-router-dom";
 
 type Tenant = components["schemas"]["github_com_opentrusty_opentrusty_internal_tenant.Tenant"];
 
@@ -47,16 +46,23 @@ export default function TenantList() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
 
   const [createdCreds, setCreatedCreds] = useState<{ email: string, password: string } | null>(null);
 
-  const form = useForm<z.infer<typeof createTenantSchema>>({
+  const createForm = useForm<z.infer<typeof createTenantSchema>>({
     resolver: zodResolver(createTenantSchema),
     defaultValues: {
       name: "",
       adminEmail: "",
       adminName: "",
     },
+  });
+
+  const editForm = useForm<{ name: string }>({
+    resolver: zodResolver(z.object({ name: z.string().min(3).max(100) })),
+    defaultValues: { name: "" },
   });
 
   const fetchTenants = async () => {
@@ -83,7 +89,7 @@ export default function TenantList() {
     fetchTenants();
   }, []);
 
-  const onSubmit = async (values: z.infer<typeof createTenantSchema>) => {
+  const onSubmitCreate = async (values: z.infer<typeof createTenantSchema>) => {
     try {
       const newTenant = await tenantApi.create({
         name: values.name,
@@ -104,11 +110,44 @@ export default function TenantList() {
         });
       }
       setIsCreateOpen(false);
-      form.reset();
+      createForm.reset();
       fetchTenants();
     } catch (error) {
       console.error(error);
       toast.error(error instanceof Error ? error.message : "Failed to create tenant");
+    }
+  };
+
+  const onSubmitEdit = async (values: { name: string }) => {
+    if (!editingTenant) return;
+    try {
+      await tenantApi.update(editingTenant.id!, { name: values.name });
+      toast.success("Tenant updated successfully");
+      setIsEditOpen(false);
+      setEditingTenant(null);
+      fetchTenants();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update tenant");
+    }
+  };
+
+  const openEditDialog = (tenant: Tenant) => {
+    setEditingTenant(tenant);
+    editForm.reset({ name: tenant.name });
+    setIsEditOpen(true);
+  };
+
+  const handleDeleteTenant = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete tenant ${name}? This action cannot be undone.`)) return;
+
+    try {
+      await tenantApi.delete(id);
+      toast.success(`Tenant ${name} deleted`);
+      fetchTenants();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete tenant");
     }
   };
 
@@ -134,10 +173,10 @@ export default function TenantList() {
                 Add a new tenant to the platform. After creation, use "Manage users" to provision an initial tenant administrator.
               </DialogDescription>
             </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <Form {...createForm}>
+              <form onSubmit={createForm.handleSubmit(onSubmitCreate)} className="space-y-4">
                 <FormField
-                  control={form.control}
+                  control={createForm.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
@@ -152,7 +191,7 @@ export default function TenantList() {
                 <div className="space-y-4 border-t pt-4">
                   <h4 className="font-medium text-sm">Initial Administrator (Optional)</h4>
                   <FormField
-                    control={form.control}
+                    control={createForm.control}
                     name="adminName"
                     render={({ field }) => (
                       <FormItem>
@@ -165,7 +204,7 @@ export default function TenantList() {
                     )}
                   />
                   <FormField
-                    control={form.control}
+                    control={createForm.control}
                     name="adminEmail"
                     render={({ field }) => (
                       <FormItem>
@@ -179,8 +218,8 @@ export default function TenantList() {
                   />
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting ? "Creating..." : "Create Tenant"}
+                  <Button type="submit" disabled={createForm.formState.isSubmitting}>
+                    {createForm.formState.isSubmitting ? "Creating..." : "Create Tenant"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -244,12 +283,14 @@ export default function TenantList() {
                   <TableCell className="font-mono text-xs">{tenant.id}</TableCell>
                   <TableCell>{tenant.status}</TableCell>
                   <TableCell>{new Date(tenant.created_at!).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/platform/tenants/${tenant.id}/users`}>
-                        <Users className="h-4 w-4 mr-2" />
-                        Manage users
-                      </Link>
+                  <TableCell className="text-right space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => openEditDialog(tenant)}>Edit</Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteTenant(tenant.id!, tenant.name!)}
+                    >
+                      Delete
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -258,6 +299,39 @@ export default function TenantList() {
           </TableBody>
         </Table>
       </div>
-    </div>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Tenant</DialogTitle>
+            <DialogDescription>
+              Update the tenant's details.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onSubmitEdit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tenant Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Acme Corp" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit" disabled={editForm.formState.isSubmitting}>
+                  {editForm.formState.isSubmitting ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div >
   );
 }

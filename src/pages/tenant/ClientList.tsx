@@ -46,6 +46,8 @@ export default function ClientList() {
 
     try {
       await oauthClientApi.delete(tenantId, clientId);
+      // Optimistic refresh
+      setClients(prev => prev.filter(c => c.client_id !== clientId));
       toast.success("Client deleted");
       fetchClients();
     } catch (error) {
@@ -98,9 +100,9 @@ export default function ClientList() {
             ) : (
               clients.map((c) => (
                 <TableRow key={c.client_id}>
-                  <TableCell className="font-medium">{c.name}</TableCell>
+                  <TableCell className="font-medium">{c.client_name || "Unnamed"}</TableCell>
                   <TableCell className="font-mono text-xs">{c.client_id}</TableCell>
-                  <TableCell>{c.type}</TableCell>
+                  <TableCell>{c.token_endpoint_auth_method === "none" ? "Public" : "Confidential"}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/tenant/${tenantId}/clients/${c.client_id}`}>

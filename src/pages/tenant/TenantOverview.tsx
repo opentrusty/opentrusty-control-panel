@@ -1,17 +1,38 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../../app/auth/AuthContext";
+import { tenantApi, type TenantMetrics } from "../../app/api/tenantApi";
 
-function StatsCard({ title, value }: { title: string; value: string }) {
+function StatsCard({ title, value, loading }: { title: string; value: string | number; loading?: boolean }) {
     return (
         <div className="bg-white p-6 rounded-lg shadow-sm border">
             <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+            <p className="mt-2 text-3xl font-bold text-gray-900">
+                {loading ? "..." : value}
+            </p>
         </div>
     );
 }
 
 export default function TenantOverview() {
-    const { tenantName } = useAuth();
+    const { tenantName, tenantId, isPlatformAdmin } = useAuth();
+    const [metrics, setMetrics] = useState<TenantMetrics | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    if (isPlatformAdmin) {
+        return <Navigate to="/platform" replace />;
+    }
+
+    useEffect(() => {
+        if (tenantId) {
+            tenantApi.getMetrics(tenantId)
+                .then(setMetrics)
+                .catch(err => {
+                    console.error("Failed to fetch metrics:", err);
+                })
+                .finally(() => setLoading(false));
+        }
+    }, [tenantId]);
 
     return (
         <div>
@@ -23,9 +44,9 @@ export default function TenantOverview() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <StatsCard title="Total Users" value="-" />
-                <StatsCard title="OAuth Clients" value="-" />
-                <StatsCard title="Audit Logs (24h)" value="-" />
+                <StatsCard title="Total Users" value={metrics?.total_users ?? 0} loading={loading} />
+                <StatsCard title="OAuth Clients" value={metrics?.total_clients ?? 0} loading={loading} />
+                <StatsCard title="Audit Logs (24h)" value={metrics?.audit_count_24h ?? 0} loading={loading} />
             </div>
 
             <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>

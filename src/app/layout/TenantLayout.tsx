@@ -1,10 +1,22 @@
-import { Outlet, Link, useLocation, useParams } from "react-router-dom";
+import { Outlet, Link, useLocation, useParams, Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 export default function TenantLayout() {
-    const { user, tenantName, logout } = useAuth();
+    const { user, tenantName, logout, isPlatformAdmin, isLoading } = useAuth();
     const { tenantId } = useParams<{ tenantId: string }>();
     const location = useLocation();
+
+    if (isLoading) {
+        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    }
+
+    // Access Guard: Platform Admins should not access tenant-scoped UI
+    // Note: If a user has BOTH platform and tenant roles, they might still want to see this,
+    // but the current requirement says "Disable/Remove tenant-scoped navigation and routes for Platform Admins".
+    if (isPlatformAdmin) {
+        console.warn("Platform Admin attempted to access tenant-scoped UI. Redirecting...");
+        return <Navigate to="/platform/overview" replace />;
+    }
 
     const isActive = (path: string) => location.pathname.startsWith(path);
 

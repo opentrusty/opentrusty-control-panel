@@ -12,6 +12,16 @@ export default function ClientCreateWizard() {
     const [loading, setLoading] = useState(false);
     const [createdClient, setCreatedClient] = useState<any>(null);
     const [clientSecret, setClientSecret] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const validateURI = (uri: string) => {
+        try {
+            const u = new URL(uri);
+            return u.protocol === 'http:' || u.protocol === 'https:';
+        } catch {
+            return false;
+        }
+    };
 
     const [formData, setFormData] = useState({
         client_name: "",
@@ -22,6 +32,18 @@ export default function ClientCreateWizard() {
 
     const handleCreate = async () => {
         if (!tenantId) return;
+
+        // Validation
+        const newErrors: Record<string, string> = {};
+        const invalidURIs = formData.redirect_uris.filter(u => !validateURI(u));
+        if (invalidURIs.length > 0) {
+            newErrors.redirect_uris = "Invalid URI format. Must be http:// or https://";
+            setErrors(newErrors);
+            toast.error("Please fix validation errors");
+            return;
+        }
+        setErrors({});
+
         try {
             setLoading(true);
             const response = await oauthClientApi.create(tenantId, {
@@ -218,7 +240,8 @@ export default function ClientCreateWizard() {
                                                 uris[index] = e.target.value;
                                                 setFormData({ ...formData, redirect_uris: uris });
                                             }}
-                                            className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                            className={`block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${errors.redirect_uris && !validateURI(uri) ? 'border-red-500' : ''
+                                                }`}
                                         />
                                         {formData.redirect_uris.length > 1 && (
                                             <button
@@ -239,6 +262,9 @@ export default function ClientCreateWizard() {
                                 >
                                     + Add URI
                                 </button>
+                                {errors.redirect_uris && (
+                                    <p className="mt-2 text-sm text-red-600">{errors.redirect_uris}</p>
+                                )}
                             </div>
 
                             <div className="flex justify-between pt-4 border-t">

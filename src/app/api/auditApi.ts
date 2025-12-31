@@ -9,6 +9,8 @@ export interface AuditEvent {
     actor_id: string;
     actor_name?: string;
     resource: string;
+    target_name?: string;
+    target_id?: string;
     ip_address?: string;
     user_agent?: string;
     metadata?: Record<string, unknown>;
@@ -16,13 +18,23 @@ export interface AuditEvent {
 }
 
 interface ListAuditEventsParams {
-    all_tenants?: boolean;
     limit?: number;
     offset?: number;
     event_type?: string;
     actor_id?: string;
     start_date?: string;
     end_date?: string;
+}
+
+export interface AuditQueryRequest {
+    tenant_id: string;
+    start_date: string; // ISO format
+    end_date: string;   // ISO format
+    reason: string;
+}
+
+export interface AuditQueryResponse {
+    id: string;
 }
 
 interface ListAuditEventsResponse {
@@ -47,10 +59,21 @@ export const auditApi = {
         return apiClient.get<ListAuditEventsResponse>(`/tenants/${tenantId}/audit?${query}`);
     },
 
-    /**
-     * Get single audit event by ID
-     */
     async get(eventId: string): Promise<AuditEvent> {
         return apiClient.get<AuditEvent>(`/audit/${eventId}`);
+    },
+
+    /**
+     * Create an audit query declaration (Platform Admin only)
+     */
+    async createQuery(request: AuditQueryRequest): Promise<AuditQueryResponse> {
+        return apiClient.post<AuditQueryResponse>("/audit-queries", request);
+    },
+
+    /**
+     * Get results for a declared audit query
+     */
+    async getResults(queryId: string): Promise<ListAuditEventsResponse> {
+        return apiClient.get<ListAuditEventsResponse>(`/audit-queries/${queryId}/results`);
     },
 };

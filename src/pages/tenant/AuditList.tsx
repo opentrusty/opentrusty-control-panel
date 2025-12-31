@@ -8,6 +8,17 @@ export default function AuditList() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const formatDate = (dateStr: string | undefined) => {
+        if (!dateStr) return "-";
+        return new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        }).format(new Date(dateStr));
+    };
+
     useEffect(() => {
         if (!tenantId) return;
 
@@ -53,12 +64,14 @@ export default function AuditList() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resource</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actor</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {events.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
                                     No audit events found.
                                 </td>
                             </tr>
@@ -66,7 +79,7 @@ export default function AuditList() {
                             events.map((event) => (
                                 <tr key={event.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(event.created_at).toLocaleString()}
+                                        {formatDate(event.created_at)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -78,6 +91,31 @@ export default function AuditList() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {event.actor_name || event.actor_id}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">{event.target_name || "-"}</span>
+                                            <span className="font-mono text-[10px] text-gray-400">{event.target_id}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                        {event.metadata && (
+                                            <div className="flex flex-col space-y-1">
+                                                {!!event.metadata.tenant_name && (
+                                                    <span>Tenant: <strong>{String(event.metadata.tenant_name)}</strong></span>
+                                                )}
+                                                {!!event.metadata.email && (
+                                                    <span>Email: {String(event.metadata.email)}</span>
+                                                )}
+                                                {!!event.metadata.changes && (
+                                                    <div className="text-xs text-gray-400">
+                                                        {!!(event.metadata.changes as any).name_from && (
+                                                            <span>Renamed: {String((event.metadata.changes as any).name_from)} → {String((event.metadata.changes as any).name_to)}</span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))

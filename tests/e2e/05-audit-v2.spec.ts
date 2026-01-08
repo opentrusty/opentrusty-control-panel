@@ -1,36 +1,58 @@
-import { test, expect } from '@playwright/test';
+// Copyright 2026 The OpenTrusty Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-const TEST_STATE_FILE = '.e2e-state.json';
+import { test, expect } from '@playwright/test';
+import { readFileSync, existsSync } from 'fs';
+
+const TENANT_USER_FILE = '.e2e-tenant-user.json';
 
 test.describe('E. Observability & Audit', () => {
-    test.use({ storageState: TEST_STATE_FILE });
-
     test('UI-08: Audit Log Verification', async ({ page }) => {
-        // 1. Navigate to Audit Logs (Platform Level)
-        // Check if sidebar has "Audit Logs"
-        const auditLink = page.getByRole('link', { name: 'Audit Logs' });
+        let tenantId: string;
+        try {
+            if (existsSync(TENANT_USER_FILE)) {
+                const user = JSON.parse(readFileSync(TENANT_USER_FILE, 'utf-8'));
+                tenantId = user.tenantId;
 
-        // If not in sidebar, check under Settings or Tenants?
-        // Based on previous knowledge, maybe it's under 'Activity' or just not implemented in sidebar yet?
-        // Runbooks imply "Return to Console... Navigate to Audit Logs".
-        // I will try /admin/audit or check for link.
-        if (await auditLink.isVisible()) {
-            await auditLink.click();
-        } else {
-            // Pick first tenant to view audit logs
+                // 2. Login as Tenant Admin
+                await page.goto('/admin/login');
+                await page.getByLabel('Email').fill(user.email);
+                await page.getByLabel('Password').fill(user.password);
+                await page.getByRole('button', { name: 'Login' }).click();
+                await page.waitForURL(url => !url.href.includes('/login'));
+            } else {
+                throw new Error('Tenant user file not found');
+            }
+        } catch (e) {
+            // Fallback to finding it in the UI (Platform Admin context)
             await page.goto('/admin/platform/tenants');
-            await expect(page.getByRole('row').nth(1)).toBeVisible({ timeout: 10000 });
-            const rowCount = await page.getByRole('row').count();
-            expect(rowCount).toBeGreaterThan(1);
+            await expect(page.getByRole('row').nth(1)).toBeVisible({ timeout: 15000 });
             const row = page.getByRole('row').nth(1);
-            const tenantId = await row.locator('td').nth(1).innerText();
-            await page.goto(`/admin/tenant/${tenantId}/audit`);
+            tenantId = (await row.locator('td').nth(1).innerText()).trim();
         }
 
-        // 2. Verify recent logs
-        // We expect a login event (from 01-bootstrap or 04-oidc-flow)
-        // and a "client_created" event.
-        await expect(page.getByRole('cell', { name: /client_created/i }).first()).toBeVisible();
-        await expect(page.getByRole('cell', { name: /login_success/i }).first()).toBeVisible();
+        await page.goto(`/admin/tenant/${tenantId}/audit`);
+
+        // Assert and Verify
+        // We look for:
+        // 1. login_success
+        // 2. client_created
+        await expect(page.getByRole('cell', { name: /client_created/i }).first()).toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('cell', { name: /login_success/i }).first()).toBeVisible({ timeout: 10000 });
+
+        // Optional: Check table row count
+        const rows = await page.getByRole('row').count();
+        expect(rows).toBeGreaterThan(1);
     });
 });

@@ -1,4 +1,19 @@
+// Copyright 2026 The OpenTrusty Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import { useState, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import { tenantApi } from "../../app/api/tenantApi";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,61 +24,18 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Plus, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { components } from "../../api/generated/schema";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { useParams, Link } from "react-router-dom";
 
 type TenantUserRole = components["schemas"]["github_com_opentrusty_opentrusty_internal_tenant.TenantUserRole"];
 
-const createUserSchema = z.object({
-    email: z.string().email(),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    role_id: z.enum(["tenant_owner", "tenant_admin", "tenant_member"]),
-});
+
 
 export default function TenantUsers() {
     const { tenantId } = useParams<{ tenantId: string }>();
     const [users, setUsers] = useState<TenantUserRole[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
-
-    const form = useForm<z.infer<typeof createUserSchema>>({
-        resolver: zodResolver(createUserSchema),
-        defaultValues: {
-            email: "",
-            password: "",
-            role_id: "tenant_member",
-        },
-    });
 
     const fetchUsers = async () => {
         if (!tenantId) return;
@@ -86,29 +58,7 @@ export default function TenantUsers() {
         fetchUsers();
     }, [tenantId]);
 
-    const onSubmit = async (values: z.infer<typeof createUserSchema>) => {
-        if (!tenantId) return;
 
-        try {
-            await tenantApi.provisionUser(tenantId, {
-                email: values.email,
-                password: values.password,
-                role: values.role_id,
-                // Add required name fields for provision logic if needed by backend,
-                // but TenantUsers seems to just need basic info.
-                // Assuming backend handles defaults or we add simple ones.
-                given_name: "Tenant",
-                family_name: "User"
-            });
-            toast.success(`User ${values.email} provisioned successfully`);
-            setIsCreateOpen(false);
-            form.reset();
-            fetchUsers();
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to provision user");
-        }
-    };
 
     if (!tenantId) return <div>Invalid Tenant ID</div>;
 
@@ -129,78 +79,7 @@ export default function TenantUsers() {
             </div>
 
             <div className="flex justify-end">
-                <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                    <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Provision User
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Provision User</DialogTitle>
-                            <DialogDescription>
-                                Create a new user in this tenant and assign a role.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                <FormField
-                                    control={form.control as any}
-                                    name="email"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Email</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="user@example.com" {...field} value={field.value as string} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control as any}
-                                    name="password"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" {...field} value={field.value as string} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control as any}
-                                    name="role_id"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Role</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value as string}>
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select a role" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="tenant_owner">Tenant Owner</SelectItem>
-                                                    <SelectItem value="tenant_admin">Tenant Admin</SelectItem>
-                                                    <SelectItem value="tenant_member">Tenant Member</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <DialogFooter>
-                                    <Button type="submit" disabled={form.formState.isSubmitting}>
-                                        {form.formState.isSubmitting ? "Provisioning..." : "Provision User"}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </Form>
-                    </DialogContent>
-                </Dialog>
+                {/* User provisioning is restricted to Tenant Admins only. Platform Admins view-only. */}
             </div>
 
             <div className="border rounded-md">

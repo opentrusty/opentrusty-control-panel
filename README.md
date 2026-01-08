@@ -28,11 +28,17 @@ The OpenTrusty Control Panel is the human-facing administrative interface for ma
               │ HTTP/REST
               ▼
 ┌─────────────────────────────┐
+│    OpenTrusty Admin         │
+│    (opentrusty-admin repo)  │
+│    - Management APIs        │
+│    - Audit Querying         │
+└─────────────┬───────────────┘
+              │ 
+              ▼
+┌─────────────────────────────┐
 │    OpenTrusty Core          │
-│    (opentrusty repo)        │
-│    - OAuth2/OIDC Engine     │
-│    - Admin APIs             │
-│    - Session Management     │
+│    (opentrusty-core repo)   │
+│    - Domain Kernel          │
 └─────────────────────────────┘
 ```
 
@@ -79,7 +85,10 @@ Before modifying code, read:
 
 ## Related Repositories
 
-- **opentrusty** — Core Identity Provider (OAuth2/OIDC engine)
+- **opentrusty-core** — Domain & Security Kernel
+- **opentrusty-auth** — Authentication Data Plane
+- **opentrusty-admin** — Management Control Plane API
+- **opentrusty-cli** — Operator Tooling
 
 ## License
 

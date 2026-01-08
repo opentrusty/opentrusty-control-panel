@@ -33,8 +33,8 @@ This repository is the **Administrative Control Panel UI**.
 
 ## 3. Interaction with Core
 
-The Control Panel interacts with `opentrusty` core **ONLY** via:
--   Documented HTTP APIs
+The Control Panel interacts with the OpenTrusty system **ONLY** via:
+-   Documented HTTP APIs (provided by `opentrusty-admin`)
 -   OpenAPI contracts
 
 **PROHIBITED:**

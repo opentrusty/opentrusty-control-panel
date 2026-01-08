@@ -1,3 +1,17 @@
+// Copyright 2026 The OpenTrusty Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { oauthClientApi } from "../../app/api/oauthClientApi";
@@ -265,6 +279,50 @@ export default function ClientCreateWizard() {
                                 {errors.redirect_uris && (
                                     <p className="mt-2 text-sm text-red-600">{errors.redirect_uris}</p>
                                 )}
+                            </div>
+
+                            <div className="pt-4 border-t border-gray-200">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">OIDC Claims Access</label>
+                                <p className="text-xs text-gray-500 mb-2">
+                                    Scopes control which <strong>identity claims</strong> your application may receive.
+                                </p>
+                                <p className="text-xs text-amber-600 mb-4 bg-amber-50 p-2 rounded border border-amber-200 inline-block">
+                                    ⚠️ Scopes do NOT grant application permissions or admin access.
+                                </p>
+                                <div className="space-y-3">
+                                    {[
+                                        { id: 'openid', label: 'OpenID (Required)', description: 'Required for OIDC authentication', mandatory: true },
+                                        { id: 'profile', label: 'Profile', description: 'Access to name, picture, locale' },
+                                        { id: 'email', label: 'Email', description: 'Access to email address' },
+                                        { id: 'address', label: 'Address', description: 'Access to postal address', disabled: false },
+                                        { id: 'phone', label: 'Phone', description: 'Access to phone number', disabled: false },
+                                    ].map(scope => (
+                                        <label key={scope.id} className="flex items-start gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.allowed_scopes.includes(scope.id)}
+                                                disabled={scope.mandatory}
+                                                onChange={(e) => {
+                                                    if (scope.mandatory) return;
+                                                    const current = new Set(formData.allowed_scopes);
+                                                    if (e.target.checked) {
+                                                        current.add(scope.id);
+                                                    } else {
+                                                        current.delete(scope.id);
+                                                    }
+                                                    setFormData({ ...formData, allowed_scopes: Array.from(current) });
+                                                }}
+                                                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                            />
+                                            <div>
+                                                <span className={`block text-sm font-medium ${scope.disabled ? "text-gray-400" : "text-gray-900"}`}>
+                                                    {scope.label}
+                                                </span>
+                                                <span className="block text-xs text-gray-500">{scope.description}</span>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="flex justify-between pt-4 border-t">

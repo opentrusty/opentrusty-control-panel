@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { oauthClientApi } from "../../app/api/oauthClientApi";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +42,7 @@ export default function ClientList() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     if (!tenantId) return;
     setIsLoading(true);
     try {
@@ -55,11 +55,14 @@ export default function ClientList() {
       toast.error("Failed to load clients");
     }
     setIsLoading(false);
-  };
+  }, [tenantId]);
 
   useEffect(() => {
-    fetchClients();
-  }, [tenantId]);
+    const load = async () => {
+      await fetchClients();
+    };
+    load();
+  }, [fetchClients]);
 
   const handleDelete = async (clientId: string) => {
     if (!tenantId) return;
@@ -166,8 +169,9 @@ function RegisterClientDialog({ fetchClients }: { fetchClients: () => void }) {
       });
       toast.success("Client registered!");
       fetchClients();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to register client");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to register client";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

@@ -44,7 +44,7 @@ export default function PlatformAudit() {
                 setPlatformError(null);
             } catch (err: unknown) {
                 console.error("Failed to fetch platform audit logs:", err);
-                const errorMessage = err instanceof Error ? (err as any).response?.data?.error || err.message : "Failed to load platform audit logs.";
+                const errorMessage = err instanceof Error ? (err as Record<string, any>).response?.data?.error || err.message : "Failed to load platform audit logs.";
                 setPlatformError(errorMessage);
             } finally {
                 setPlatformLoading(false);

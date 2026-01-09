@@ -28,7 +28,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  base: "/admin/",
+  base: "/",
   server: {
     proxy: {
       // Proxy API requests to the Admin Plane (MANAGEMENT API)

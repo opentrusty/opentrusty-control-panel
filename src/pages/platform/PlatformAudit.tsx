@@ -42,9 +42,10 @@ export default function PlatformAudit() {
                 const response = await auditApi.listPlatform();
                 setPlatformEvents(response.events);
                 setPlatformError(null);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Failed to fetch platform audit logs:", err);
-                setPlatformError(err.response?.data?.error || "Failed to load platform audit logs.");
+                const errorMessage = err instanceof Error ? (err as any).response?.data?.error || err.message : "Failed to load platform audit logs.";
+                setPlatformError(errorMessage);
             } finally {
                 setPlatformLoading(false);
             }
@@ -71,9 +72,10 @@ export default function PlatformAudit() {
 
             const result = await auditApi.getResults(response.id);
             setEvents(result.events);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Audit declaration failed:", err);
-            setError(err.response?.data?.error || "Failed to declare audit access intent.");
+            const errorMessage = err instanceof Error ? (err as Record<string, any>).response?.data?.error || err.message : "Failed to declare audit access intent.";
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -180,8 +182,8 @@ export default function PlatformAudit() {
                                                         )}
                                                         {!!event.metadata.changes && (
                                                             <div className="text-xs text-gray-400">
-                                                                {!!(event.metadata.changes as any).name_from && (
-                                                                    <span>Renamed: {String((event.metadata.changes as any).name_from)} → {String((event.metadata.changes as any).name_to)}</span>
+                                                                {!!(event.metadata.changes as Record<string, unknown>).name_from && (
+                                                                    <span>Renamed: {String((event.metadata.changes as Record<string, string>).name_from)} → {String((event.metadata.changes as Record<string, string>).name_to)}</span>
                                                                 )}
                                                             </div>
                                                         )}

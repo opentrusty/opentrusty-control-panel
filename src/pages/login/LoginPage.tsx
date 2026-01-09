@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../app/auth/AuthContext";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -27,23 +28,27 @@ export default function LoginPage() {
 
     // Handle post-login redirection via effect to avoid stale state
     useEffect(() => {
-        if (isAuthenticated) {
-            // Check for return_to param (OIDC flow)
-            const params = new URLSearchParams(window.location.search);
-            const returnTo = params.get("return_to");
-            if (returnTo) {
-                window.location.href = returnTo;
-                return;
-            }
+        if (!isAuthenticated) return;
 
-            if (isPlatformAdmin) {
-                navigate("/platform/tenants");
-            } else if (authTenantId) {
-                navigate(`/tenant/${authTenantId}/overview`);
-            } else {
+        // Check for return_to param (OIDC flow)
+        const params = new URLSearchParams(window.location.search);
+        const returnTo = params.get("return_to");
+        if (returnTo) {
+            window.location.href = returnTo;
+            return;
+        }
+
+        if (isPlatformAdmin) {
+            navigate("/platform/tenants");
+        } else if (authTenantId) {
+            navigate(`/tenant/${authTenantId}/overview`);
+        } else {
+            // Use a slight delay or handle via a dedicated error state to avoid synchronous setState in effect
+            const timer = setTimeout(() => {
                 setError("No admin role assigned");
                 setIsLoading(false);
-            }
+            }, 0);
+            return () => clearTimeout(timer);
         }
     }, [isAuthenticated, isPlatformAdmin, authTenantId, navigate]);
 

@@ -17,11 +17,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Building2, Users, ShieldAlert, Activity, Key } from "lucide-react";
 import { platformApi } from "../../app/api/platformApi";
 import type { PlatformMetrics } from "../../app/api/platformApi";
-import { auditApi } from "../../app/api/auditApi";
+import { auditApi, type AuditEvent } from "../../app/api/auditApi";
 
 export default function PlatformOverview() {
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<AuditEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

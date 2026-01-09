@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { test, expect } from '@playwright/test';
-import { writeFileSync } from 'fs';
 
 const TEST_STATE_FILE = '.e2e-state.json';
 

@@ -16,6 +16,7 @@
 // Tenant API module
 
 import { apiClient } from "./client";
+import type { User } from "../../types/auth";
 
 interface Tenant {
     id: string;
@@ -86,15 +87,15 @@ export const tenantApi = {
     /**
      * List users in a tenant
      */
-    async listUsers(tenantId: string): Promise<any[]> {
-        return apiClient.get<any[]>(`/tenants/${tenantId}/users`);
+    async listUsers(tenantId: string): Promise<User[]> {
+        return apiClient.get<User[]>(`/tenants/${tenantId}/users`);
     },
 
     /**
      * Provision user in a tenant
      */
-    async provisionUser(tenantId: string, data: any): Promise<any> {
-        return apiClient.post<any>(`/tenants/${tenantId}/users`, data);
+    async provisionUser(tenantId: string, data: { email: string; nickname?: string; role_name?: string }): Promise<User> {
+        return apiClient.post<User>(`/tenants/${tenantId}/users`, data);
     },
 
     /**

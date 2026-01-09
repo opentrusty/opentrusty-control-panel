@@ -19,6 +19,8 @@ import './index.css'
 import { AuthProvider } from "./app/auth/AuthContext"
 import { router } from "./app/router"
 
+console.log("OpenTrusty Control Panel v0.1.2")
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>

@@ -75,7 +75,14 @@ npm run build
 npm run preview
 ```
 
+## Deployment
+
+Pre-built static builds of the Control Panel are available in the [GitHub Releases](https://github.com/opentrusty/opentrusty-control-panel/releases).
+
+Detailed instructions are available in the [Canonical Deployment Guide](https://github.com/opentrusty/opentrusty-core/blob/main/DEPLOYMENT.md) and the `README.md` included in the release package.
+
 ## AI Governance
+
 
 Before modifying code, read:
 

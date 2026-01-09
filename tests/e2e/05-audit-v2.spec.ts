@@ -34,13 +34,14 @@ test.describe('E. Observability & Audit', () => {
             } else {
                 throw new Error('Tenant user file not found');
             }
-        } catch (_e) {
+        } catch {
             // Fallback to finding it in the UI (Platform Admin context)
             await page.goto('/admin/platform/tenants');
             await expect(page.getByRole('row').nth(1)).toBeVisible({ timeout: 15000 });
             const row = page.getByRole('row').nth(1);
             tenantId = (await row.locator('td').nth(1).innerText()).trim();
         }
+
 
         await page.goto(`/admin/tenant/${tenantId}/audit`);
 

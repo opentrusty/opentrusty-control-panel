@@ -24,7 +24,7 @@ export default function ClientCreateWizard() {
     const navigate = useNavigate();
     const [step, setStep] = useState<WizardStep>('basics');
     const [loading, setLoading] = useState(false);
-    const [createdClient, setCreatedClient] = useState<any>(null);
+    const [createdClient, setCreatedClient] = useState<{ client_id?: string; client_name?: string; redirect_uris?: string[]; allowed_scopes?: string[] } | null>(null);
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -73,8 +73,9 @@ export default function ClientCreateWizard() {
             setClientSecret(response.client_secret);
             setStep('confirmation');
             toast.success("Client registered successfully");
-        } catch (error: any) {
-            toast.error("Registration failed: " + error.message);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Unknown error";
+            toast.error("Registration failed: " + message);
         } finally {
             setLoading(false);
         }
@@ -86,6 +87,7 @@ export default function ClientCreateWizard() {
     };
 
     const downloadJson = () => {
+        if (!createdClient) return;
         const config = {
             client_id: createdClient.client_id,
             client_secret: clientSecret,
@@ -139,7 +141,7 @@ export default function ClientCreateWizard() {
                                         className="flex-1 block w-full rounded-none rounded-l-md sm:text-sm border-gray-300 bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                     <button
-                                        onClick={() => copyToClipboard(createdClient?.client_id)}
+                                        onClick={() => copyToClipboard(createdClient?.client_id || "")}
                                         className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm hover:bg-gray-100"
                                     >
                                         Copy

@@ -122,7 +122,7 @@ test.describe('B. Tenant Lifecycle', () => {
         let user;
         try {
             user = JSON.parse(readFileSync(TENANT_USER_FILE, 'utf-8'));
-        } catch (_e) {
+        } catch {
             test.skip();
             return;
         }

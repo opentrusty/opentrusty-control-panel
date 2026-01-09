@@ -55,7 +55,10 @@ export default function TenantUsers() {
     }, [tenantId]);
 
     useEffect(() => {
-        fetchUsers();
+        const loadUsers = async () => {
+            await fetchUsers();
+        };
+        loadUsers();
     }, [fetchUsers]);
 
     if (!tenantId) return <div>Invalid Tenant ID</div>;

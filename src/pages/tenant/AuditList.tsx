@@ -124,8 +124,8 @@ export default function AuditList() {
                                                 )}
                                                 {!!event.metadata.changes && (
                                                     <div className="text-xs text-gray-400">
-                                                        {!!(event.metadata.changes as any).name_from && (
-                                                            <span>Renamed: {String((event.metadata.changes as any).name_from)} → {String((event.metadata.changes as any).name_to)}</span>
+                                                        {!!(event.metadata.changes as Record<string, unknown>).name_from && (
+                                                            <span>Renamed: {String((event.metadata.changes as Record<string, unknown>).name_from)} → {String((event.metadata.changes as Record<string, unknown>).name_to)}</span>
                                                         )}
                                                     </div>
                                                 )}

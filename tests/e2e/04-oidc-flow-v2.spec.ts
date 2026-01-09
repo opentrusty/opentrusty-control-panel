@@ -42,7 +42,9 @@ test.describe('D. OIDC Login Flow', () => {
         try {
             const { execSync } = await import('child_process');
             execSync(`lsof -t -i:${DEMO_APP_PORT} | xargs kill -9 || true`);
-        } catch (_e) { }
+        } catch {
+            // demo-client might not be running if skipping this part
+        }
 
         demoAppProcess = spawn('go', ['run', '.'], {
             cwd: demoAppPath,

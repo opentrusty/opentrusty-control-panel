@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { tenantApi } from "../../app/api/tenantApi";
 import { useAuth } from "../../app/auth/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -90,22 +90,28 @@ export default function UserList() {
     },
   });
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (!tenantId) return;
     setIsLoading(true);
     try {
       const data = await tenantApi.listUsers(tenantId);
-      if (data) setUsers(data as unknown as TenantUserRole[]);
-    } catch (error) {
+      if (data) {
+        setUsers(data as unknown as TenantUserRole[]);
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
       console.error(error);
-      toast.error("Failed to load users");
+      toast.error("Failed to load users: " + message);
     }
     setIsLoading(false);
-  };
+  }, [tenantId]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [tenantId]);
+    const load = async () => {
+      await fetchUsers();
+    };
+    load();
+  }, [fetchUsers]);
 
   const [provisionedCreds, setProvisionedCreds] = useState<{ email: string; password: string } | null>(null);
 
@@ -219,7 +225,7 @@ export default function UserList() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
-                    control={form.control as any}
+                    control={form.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
@@ -232,7 +238,7 @@ export default function UserList() {
                     )}
                   />
                   <FormField
-                    control={form.control as any}
+                    control={form.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
@@ -245,7 +251,7 @@ export default function UserList() {
                     )}
                   />
                   <FormField
-                    control={form.control as any}
+                    control={form.control}
                     name="role_id"
                     render={({ field }) => (
                       <FormItem>
@@ -413,7 +419,7 @@ export default function UserList() {
                       {u.role}
                     </span>
                   </TableCell>
-                  <TableCell>{formatDate(u.granted_at as any)}</TableCell>
+                  <TableCell>{formatDate(u.granted_at)}</TableCell>
                   {canManageUsers && (
                     <TableCell className="text-right space-x-2">
                       <Button variant="ghost" size="sm" title="Edit User" onClick={() => {

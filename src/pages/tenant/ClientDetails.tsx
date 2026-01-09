@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { oauthClientApi } from "../../app/api/oauthClientApi";
 import { Button } from "@/components/ui/button";
@@ -33,9 +33,7 @@ export default function ClientDetails() {
     const [oauthClient, setOauthClient] = useState<Client | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchClient = async () => {
-        if (!tenantId || !clientId) return;
-        setIsLoading(true);
+    const fetchClient = useCallback(async () => {
         if (!tenantId || !clientId) return;
         setIsLoading(true);
         try {
@@ -47,11 +45,14 @@ export default function ClientDetails() {
             toast.error("Failed to load client details");
         }
         setIsLoading(false);
-    };
+    }, [tenantId, clientId]);
 
     useEffect(() => {
-        fetchClient();
-    }, [tenantId, clientId]);
+        const load = async () => {
+            await fetchClient();
+        };
+        load();
+    }, [fetchClient]);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);

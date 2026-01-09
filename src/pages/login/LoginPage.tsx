@@ -16,7 +16,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../app/auth/AuthContext";
 
-// eslint-disable-next-line react-refresh/only-export-components
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { test, expect } from '@playwright/test';
+import process from 'process';
 
 const TEST_STATE_FILE = '.e2e-state.json';
 

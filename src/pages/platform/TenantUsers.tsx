@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import { tenantApi } from "../../app/api/tenantApi";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ export default function TenantUsers() {
     const [users, setUsers] = useState<TenantUserRole[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         if (!tenantId) return;
         setIsLoading(true);
         // Using the manually patched GET method
@@ -45,20 +45,18 @@ export default function TenantUsers() {
             const data = await tenantApi.listUsers(tenantId);
             // The API returns the array directly
             if (data) {
-                setUsers(data as any[]);
+                setUsers(data as TenantUserRole[]);
             }
         } catch (error) {
             console.error(error);
             toast.error("Failed to load users");
         }
         setIsLoading(false);
-    };
+    }, [tenantId]);
 
     useEffect(() => {
         fetchUsers();
-    }, [tenantId]);
-
-
+    }, [fetchUsers]);
 
     if (!tenantId) return <div>Invalid Tenant ID</div>;
 

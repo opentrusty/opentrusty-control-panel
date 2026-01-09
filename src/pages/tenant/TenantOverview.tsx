@@ -33,12 +33,8 @@ export default function TenantOverview() {
     const [metrics, setMetrics] = useState<TenantMetrics | null>(null);
     const [loading, setLoading] = useState(true);
 
-    if (isPlatformAdmin) {
-        return <Navigate to="/platform" replace />;
-    }
-
     useEffect(() => {
-        if (tenantId) {
+        if (tenantId && !isPlatformAdmin) {
             tenantApi.getMetrics(tenantId)
                 .then(setMetrics)
                 .catch(err => {
@@ -46,7 +42,11 @@ export default function TenantOverview() {
                 })
                 .finally(() => setLoading(false));
         }
-    }, [tenantId]);
+    }, [tenantId, isPlatformAdmin]);
+
+    if (isPlatformAdmin) {
+        return <Navigate to="/platform" replace />;
+    }
 
     return (
         <div>

@@ -94,7 +94,7 @@ export const tenantApi = {
     /**
      * Provision user in a tenant
      */
-    async provisionUser(tenantId: string, data: { email: string; nickname?: string; role_name?: string }): Promise<User> {
+    async provisionUser(tenantId: string, data: { email: string; password?: string; nickname?: string; role_id?: string; role_name?: string }): Promise<User> {
         return apiClient.post<User>(`/tenants/${tenantId}/users`, data);
     },
 

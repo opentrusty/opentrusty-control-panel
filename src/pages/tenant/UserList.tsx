@@ -95,7 +95,7 @@ export default function UserList() {
     setIsLoading(true);
     try {
       const data = await tenantApi.listUsers(tenantId);
-      if (data) setUsers(data as any[]);
+      if (data) setUsers(data as unknown as TenantUserRole[]);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load users");
@@ -118,9 +118,11 @@ export default function UserList() {
         password: values.password,
         role_id: values.role_id,
       });
+
+      const responseData = response as unknown as { password?: string };
       // Backend now returns password in the response for one-time display
-      if (response && (response as any).password) {
-        setProvisionedCreds({ email: values.email, password: (response as any).password });
+      if (responseData && responseData.password) {
+        setProvisionedCreds({ email: values.email, password: responseData.password });
       } else {
         setProvisionedCreds({ email: values.email, password: values.password });
       }

@@ -40,8 +40,9 @@ test.describe('D. OIDC Login Flow', () => {
 
         // Kill any existing on 8082 (rough cleanup)
         try {
-            require('child_process').execSync(`lsof -t -i:${DEMO_APP_PORT} | xargs kill -9 || true`);
-        } catch (e) { }
+            const { execSync } = await import('child_process');
+            execSync(`lsof -t -i:${DEMO_APP_PORT} | xargs kill -9 || true`);
+        } catch (_e) { }
 
         demoAppProcess = spawn('go', ['run', '.'], {
             cwd: demoAppPath,

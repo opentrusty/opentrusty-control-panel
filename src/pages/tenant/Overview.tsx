@@ -22,16 +22,21 @@ import {
 } from "@/components/ui/card";
 import { Key, Users, Activity, Plus, ExternalLink } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { oauthClientApi } from "../../app/api/oauthClientApi";
+import { oauthClientApi, type OAuthClient } from "../../app/api/oauthClientApi";
 import { tenantApi } from "../../app/api/tenantApi";
-import { auditApi } from "../../app/api/auditApi";
+import { auditApi, type AuditEvent } from "../../app/api/auditApi";
+
+interface Tenant {
+  id: string;
+  name: string;
+}
 
 export default function TenantOverview() {
   const { tenantId } = useParams<{ tenantId: string }>();
-  const [clients, setClients] = useState<any[]>([]);
-  const [tenant, setTenant] = useState<any>(null);
+  const [clients, setClients] = useState<OAuthClient[]>([]);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
   const [usersCount, setUsersCount] = useState(0);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<AuditEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Issuer URL calculation logic

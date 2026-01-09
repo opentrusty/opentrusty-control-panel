@@ -27,6 +27,7 @@ export default function PlatformAudit() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [queryId, setQueryId] = useState<string | null>(null);
+    const [metrics, setMetrics] = useState<Record<string, number> | null>(null); // Metrics type is complex and might be any for now, but I'll try to find it.
     const [declaration, setDeclaration] = useState<AuditQueryRequest>({
         tenant_id: "",
         start_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

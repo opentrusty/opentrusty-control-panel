@@ -34,7 +34,7 @@ test.describe('E. Observability & Audit', () => {
             } else {
                 throw new Error('Tenant user file not found');
             }
-        } catch (e) {
+        } catch (_e) {
             // Fallback to finding it in the UI (Platform Admin context)
             await page.goto('/admin/platform/tenants');
             await expect(page.getByRole('row').nth(1)).toBeVisible({ timeout: 15000 });

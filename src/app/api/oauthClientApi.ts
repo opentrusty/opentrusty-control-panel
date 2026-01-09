@@ -17,7 +17,7 @@
 
 import { apiClient } from "./client";
 
-interface OAuthClient {
+export interface OAuthClient {
     id: string;
     client_id: string;
     client_name: string;

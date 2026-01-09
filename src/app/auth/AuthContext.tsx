@@ -14,9 +14,8 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-// eslint-disable-next-line react-refresh/only-export-components
-export { Button, buttonVariants }
 import { authApi, apiClient, UnauthorizedError } from "../api";
+
 import type { AuthContextValue, User, RoleAssignment } from "../../types/auth";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);

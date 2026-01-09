@@ -47,11 +47,13 @@ interface FetchOptions extends RequestInit {
   baseUrl?: string;
 }
 
+import { getApiBaseUrl } from "../config";
+
 class ApiClient {
   private baseUrl: string;
   private onUnauthorized?: () => void;
 
-  constructor(baseUrl: string = import.meta.env.VITE_API_BASE_URL || "/api/v1") {
+  constructor(baseUrl: string = getApiBaseUrl()) {
     this.baseUrl = baseUrl;
   }
 

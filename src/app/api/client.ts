@@ -51,7 +51,7 @@ class ApiClient {
   private baseUrl: string;
   private onUnauthorized?: () => void;
 
-  constructor(baseUrl: string = "/api/v1") {
+  constructor(baseUrl: string = import.meta.env.VITE_API_BASE_URL || "/api/v1") {
     this.baseUrl = baseUrl;
   }
 

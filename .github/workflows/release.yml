@@ -33,18 +33,20 @@ jobs:
         id: prepare
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
-          DIR="opentrusty-control-panel"
+          DIR="opentrusty-control-panel-$VERSION"
           mkdir -p $DIR
           
           # Copy build output
           cp -r dist $DIR/
           
           # Copy deployment assets
-          cp Caddyfile.example $DIR/
+          cp deploy/install.sh $DIR/
           cp deploy/README.md $DIR/
+          cp Caddyfile.example $DIR/
           
           # Copy License if exists in root
           if [ -f "LICENSE" ]; then cp LICENSE $DIR/; fi
+          if [ -f "README.md" ]; then cp README.md $DIR/PROJECT_README.md; fi
           
           # Archive
           tar -czf opentrusty-control-panel-$VERSION.tar.gz $DIR

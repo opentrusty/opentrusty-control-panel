@@ -7,39 +7,75 @@ set -e
 COMPONENT="control-panel"
 WEB_ROOT="/var/www/opentrusty-control-panel"
 
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+log_info() { echo -e "${GREEN}✓${NC} $1"; }
+log_warn() { echo -e "${YELLOW}⚠${NC} $1"; }
+log_error() { echo -e "${RED}✗${NC} $1"; }
+
 # 1. Root check
 if [ "$EUID" -ne 0 ]; then
-  echo "Error: This script must be run as root."
+  log_error "This script must be run as root."
   exit 1
 fi
 
 echo "Installing OpenTrusty ${COMPONENT}..."
+echo ""
 
-# 2. Create web directory
+# 2. Pre-flight checks
+echo "Running pre-flight checks..."
+
+# Check for web server
+if command -v caddy &> /dev/null; then
+  log_info "Caddy detected."
+  WEB_USER="caddy"
+elif command -v nginx &> /dev/null; then
+  log_info "Nginx detected."
+  WEB_USER="www-data"
+else
+  log_warn "No web server (Caddy/Nginx) detected. You will need to configure one manually."
+  WEB_USER="www-data"
+fi
+
+# 3. Create web directory
 mkdir -p "${WEB_ROOT}"
-echo "✓ Created web directory at ${WEB_ROOT}"
+log_info "Created web directory at ${WEB_ROOT}"
 
-# 3. Copy static files
+# 4. Copy static files
 if [ -d "./dist" ]; then
   rm -rf "${WEB_ROOT}/dist"
   cp -r ./dist "${WEB_ROOT}/"
-  echo "✓ Installed static files to ${WEB_ROOT}/dist"
+  log_info "Installed static files to ${WEB_ROOT}/dist"
 else
-  echo "Error: dist/ directory not found in current directory."
+  log_error "dist/ directory not found in current directory."
   exit 1
 fi
 
-# 4. Configure runtime environment
+# 5. Configure runtime environment
 echo ""
 echo "Configuring runtime environment..."
 
-# Prompt for API URL if not set
+# Support both interactive and non-interactive modes
 if [ -z "$OPENTRUSTY_API_URL" ]; then
-  read -p "Enter Admin Plane API URL (e.g., https://admin.yourdomain.com/api/v1): " OPENTRUSTY_API_URL
+  if [ -t 0 ]; then
+    read -p "Enter Admin Plane API URL (e.g., https://admin.yourdomain.com/api/v1): " OPENTRUSTY_API_URL
+  else
+    log_error "OPENTRUSTY_API_URL not set. Set environment variable or run interactively."
+    exit 1
+  fi
 fi
 
 if [ -z "$OPENTRUSTY_AUTH_URL" ]; then
-  read -p "Enter Auth Plane URL (e.g., https://auth.yourdomain.com): " OPENTRUSTY_AUTH_URL
+  if [ -t 0 ]; then
+    read -p "Enter Auth Plane URL (e.g., https://auth.yourdomain.com): " OPENTRUSTY_AUTH_URL
+  else
+    log_error "OPENTRUSTY_AUTH_URL not set. Set environment variable or run interactively."
+    exit 1
+  fi
 fi
 
 # Write runtime config
@@ -52,17 +88,35 @@ window.__OPENTRUSTY_CONFIG__ = {
 };
 EOF
 
-echo "✓ Created runtime configuration at ${WEB_ROOT}/dist/config.js"
+log_info "Created runtime configuration at ${WEB_ROOT}/dist/config.js"
 
-# 5. Set permissions (for Caddy/nginx)
-chown -R caddy:caddy "${WEB_ROOT}" 2>/dev/null || chown -R www-data:www-data "${WEB_ROOT}" 2>/dev/null || true
-echo "✓ Set web server permissions"
+# 6. Copy Caddyfile example if present and Caddy is detected
+if [ -f "./Caddyfile.example" ] && command -v caddy &> /dev/null; then
+  if [ ! -f "/etc/caddy/sites-available/opentrusty-console.caddy" ]; then
+    mkdir -p /etc/caddy/sites-available
+    cp ./Caddyfile.example /etc/caddy/sites-available/opentrusty-console.caddy
+    log_info "Copied Caddyfile.example to /etc/caddy/sites-available/"
+    log_warn "Edit and include this file in your Caddy configuration"
+  fi
+fi
+
+# 7. Set permissions
+chown -R "${WEB_USER}:${WEB_USER}" "${WEB_ROOT}" 2>/dev/null || true
+log_info "Set web server permissions for ${WEB_USER}"
 
 echo ""
+echo "============================================"
 echo "Installation complete!"
+echo "============================================"
+echo ""
+echo "Configuration:"
+echo "  API URL:  ${OPENTRUSTY_API_URL}"
+echo "  Auth URL: ${OPENTRUSTY_AUTH_URL}"
 echo ""
 echo "Next steps:"
-echo "1. Configure your web server (Caddy/Nginx) to serve ${WEB_ROOT}/dist"
-echo "2. See Caddyfile.example for recommended configuration"
+echo "1. Configure your web server to serve ${WEB_ROOT}/dist"
+echo "2. For Caddy: see /etc/caddy/sites-available/opentrusty-console.caddy"
 echo "3. Ensure the web server can reach the Admin and Auth Planes"
+echo "4. Reload your web server: systemctl reload caddy (or nginx)"
 echo ""
+

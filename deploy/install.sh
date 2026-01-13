@@ -6,6 +6,7 @@ set -e
 
 COMPONENT="control-panel"
 WEB_ROOT="/var/www/opentrusty-control-panel"
+VERSION="dev"
 
 # Colors for output
 RED='\033[0;31m'
@@ -90,7 +91,11 @@ EOF
 
 log_info "Created runtime configuration at ${WEB_ROOT}/dist/config.js"
 
-# 6. Copy Caddyfile example if present and Caddy is detected
+# 6. Record version
+echo "$VERSION" > "${WEB_ROOT}/dist/version.txt"
+log_info "Recorded version $VERSION in ${WEB_ROOT}/dist/version.txt"
+
+# 7. Copy Caddyfile example if present and Caddy is detected
 if [ -f "./Caddyfile.example" ] && command -v caddy &> /dev/null; then
   if [ ! -f "/etc/caddy/sites-available/opentrusty-console.caddy" ]; then
     mkdir -p /etc/caddy/sites-available

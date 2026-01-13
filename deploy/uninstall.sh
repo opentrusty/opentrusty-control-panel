@@ -23,12 +23,25 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# Detect interactive mode
+INTERACTIVE=false
+if [ -t 0 ]; then INTERACTIVE=true; fi
+
+# Support force flag
+FORCE_REMOVE=${FORCE_REMOVE:-false}
+
 echo "Uninstalling OpenTrusty ${COMPONENT}..."
 echo ""
 
 # 2. Remove static files
 if [ -d "${WEB_ROOT}" ]; then
-  read -p "Do you want to remove all files in ${WEB_ROOT}? (y/N): " REMOVE_ALL
+  REMOVE_ALL="n"
+  if [ "$INTERACTIVE" = true ] && [ "$FORCE_REMOVE" = false ]; then
+    read -p "Do you want to remove all files in ${WEB_ROOT}? (y/N): " REMOVE_ALL
+  elif [ "$FORCE_REMOVE" = true ]; then
+    REMOVE_ALL="y"
+  fi
+
   if [[ "$REMOVE_ALL" =~ ^[Yy]$ ]]; then
     rm -rf "${WEB_ROOT}"
     log_info "Removed everything in ${WEB_ROOT}"

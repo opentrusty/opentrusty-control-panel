@@ -60,8 +60,6 @@ The Control Panel interacts with the OpenTrusty system **ONLY** via:
 
 **Any feature requiring protocol or auth behavior changes MUST be implemented in `opentrusty` core first.**
 
-**Any feature requiring protocol or auth behavior changes MUST be implemented in `opentrusty` core first.**
-
 ## 6. Cross-Repo Contract Awareness
 
 **AI MUST** be aware of the `docs/_ai/integration-contract.md` which binds this repository to `opentrusty`.

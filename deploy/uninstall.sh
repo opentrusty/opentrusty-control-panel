@@ -56,8 +56,13 @@ fi
 
 # 3. Handle Caddy configuration if exists
 if [ -f "/etc/caddy/sites-available/opentrusty-console.caddy" ]; then
-  log_warn "Found Caddy configuration at /etc/caddy/sites-available/opentrusty-console.caddy"
-  log_warn "Please manually remove or update your Caddyfile."
+  if [[ "$REMOVE_ALL" =~ ^[Yy]$ ]]; then
+    rm -f "/etc/caddy/sites-available/opentrusty-console.caddy"
+    log_info "Removed Caddy configuration /etc/caddy/sites-available/opentrusty-console.caddy"
+  else
+    log_warn "Found Caddy configuration at /etc/caddy/sites-available/opentrusty-console.caddy"
+    log_warn "Please manually remove or update your Caddyfile."
+  fi
 fi
 
 echo ""

@@ -95,16 +95,6 @@ log_info "Created runtime configuration at ${WEB_ROOT}/dist/config.js"
 echo "$VERSION" > "${WEB_ROOT}/dist/version.txt"
 log_info "Recorded version $VERSION in ${WEB_ROOT}/dist/version.txt"
 
-# 7. Copy Caddyfile example if present and Caddy is detected
-if [ -f "./Caddyfile.example" ] && command -v caddy &> /dev/null; then
-  if [ ! -f "/etc/caddy/sites-available/opentrusty-console.caddy" ]; then
-    mkdir -p /etc/caddy/sites-available
-    cp ./Caddyfile.example /etc/caddy/sites-available/opentrusty-console.caddy
-    log_info "Copied Caddyfile.example to /etc/caddy/sites-available/"
-    log_warn "Edit and include this file in your Caddy configuration"
-  fi
-fi
-
 # 7. Set permissions
 chown -R "${WEB_USER}:${WEB_USER}" "${WEB_ROOT}" 2>/dev/null || true
 log_info "Set web server permissions for ${WEB_USER}"

@@ -54,16 +54,5 @@ else
   log_info "No web directory found at ${WEB_ROOT}"
 fi
 
-# 3. Handle Caddy configuration if exists
-if [ -f "/etc/caddy/sites-available/opentrusty-console.caddy" ]; then
-  if [[ "$REMOVE_ALL" =~ ^[Yy]$ ]]; then
-    rm -f "/etc/caddy/sites-available/opentrusty-console.caddy"
-    log_info "Removed Caddy configuration /etc/caddy/sites-available/opentrusty-console.caddy"
-  else
-    log_warn "Found Caddy configuration at /etc/caddy/sites-available/opentrusty-console.caddy"
-    log_warn "Please manually remove or update your Caddyfile."
-  fi
-fi
-
 echo ""
 log_info "OpenTrusty ${COMPONENT} uninstallation complete."
